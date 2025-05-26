@@ -38,13 +38,13 @@ private:
   rclcpp::TimerBase::SharedPtr timer_;
 
   void lowstate_callback(const unitree_hg::msg::LowState::SharedPtr msg) {
-    lowstate_joints_ = msg->motor_state;
+    lowstate_joints_.assign(msg->motor_state.begin(), msg->motor_state.end());
   }
   void left_state_callback(const unitree_hg::msg::HandState::SharedPtr msg) {
-    left_joints_ = msg->motor_state;
+    left_joints_.assign(msg->motor_state.begin(), msg->motor_state.end());
   }
   void right_state_callback(const unitree_hg::msg::HandState::SharedPtr msg) {
-    right_joints_ = msg->motor_state;
+    right_joints_.assign(msg->motor_state.begin(), msg->motor_state.end());
   }
 
   void publish_joint_states() {
