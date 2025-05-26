@@ -106,21 +106,21 @@ private:
       if (i > 14 && i < 22) { target_index = i - 2; }
       else if (i > 21) { target_index = i + 5; }
 
-      js.position[target_index] = lowstate_joints_[i].position;
-      js.velocity[target_index] = lowstate_joints_[i].velocity;
-      js.effort[target_index] = lowstate_joints_[i].torque;
+      js.position[target_index] = lowstate_joints_[i].q;
+      js.velocity[target_index] = lowstate_joints_[i].dq;
+      js.effort[target_index] = lowstate_joints_[i].tau_est;
     }
 
     for (size_t i = 0; i < 7; ++i) {
         size_t target_index = 20 + i;
-        js.position[target_index] = left_joints_[i].position;
-        js.velocity[target_index] = left_joints_[i].velocity;
-        js.effort[target_index] = left_joints_[i].torque;
+        js.position[target_index] = left_joints_[i].q;
+        js.velocity[target_index] = left_joints_[i].dq;
+        js.effort[target_index] = left_joints_[i].tau_est;
 
         target_index = 27 + i;
-        js.position[target_index] = right_joints_[i].position;
-        js.velocity[target_index] = right_joints_[i].velocity;
-        js.effort[target_index] = right_joints_[i].torque;
+        js.position[target_index] = right_joints_[i].q;
+        js.velocity[target_index] = right_joints_[i].dq;
+        js.effort[target_index] = right_joints_[i].tau_est;
     }
 
     joint_state_pub_->publish(js);
