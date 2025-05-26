@@ -7,7 +7,11 @@
 
 class JointStatePublisher : public rclcpp::Node {
 public:
-  JointStatePublisher() : Node("joint_state_publisher") {
+  JointStatePublisher()
+  : Node("joint_state_publisher"),
+      lowstate_joints_(35, unitree_hg::msg::MotorState()),
+      left_joints_(7, unitree_hg::msg::MotorState()),
+      right_joints_(7, unitree_hg::msg::MotorState()) {
     joint_state_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("/joint_states", 10);
     
     lowstate_sub_ = this->create_subscription<unitree_hg::msg::LowState>(
@@ -27,9 +31,9 @@ public:
 
 private:
   // Store latest joint values
-  std::vector<unitree_hg::msg::MotorState> lowstate_joints_(35, unitree_hg::msg::MotorState());
-  std::vector<unitree_hg::msg::MotorState> left_joints_(7, unitree_hg::msg::MotorState());
-  std::vector<unitree_hg::msg::MotorState> right_joints_(7, unitree_hg::msg::MotorState());
+  std::vector<unitree_hg::msg::MotorState> lowstate_joints_;
+  std::vector<unitree_hg::msg::MotorState> left_joints_;
+  std::vector<unitree_hg::msg::MotorState> right_joints_;
 
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_pub_;
   rclcpp::Subscription<unitree_hg::msg::LowState>::SharedPtr lowstate_sub_;
