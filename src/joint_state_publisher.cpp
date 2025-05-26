@@ -27,9 +27,9 @@ public:
 
 private:
   // Store latest joint values
-  std::vector<unitree_hg::msg::MotorState> lowstate_joints_;
-  std::vector<unitree_hg::msg::MotorState> left_joints_;
-  std::vector<unitree_hg::msg::MotorState> right_joints_;
+  std::vector<unitree_hg::msg::MotorState> lowstate_joints_(35, unitree_hg::msg::MotorState());
+  std::vector<unitree_hg::msg::MotorState> left_joints_(7, unitree_hg::msg::MotorState());
+  std::vector<unitree_hg::msg::MotorState> right_joints_(7, unitree_hg::msg::MotorState());
 
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_pub_;
   rclcpp::Subscription<unitree_hg::msg::LowState>::SharedPtr lowstate_sub_;
