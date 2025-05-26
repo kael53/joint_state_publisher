@@ -2,8 +2,8 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 
-#include <unitree_hg/msg/LowState.hpp>
-#include <unitree_hg/msg/HandState.hpp>
+#include <unitree_hg/msg/low_state.hpp>
+#include <unitree_hg/msg/hand_state.hpp>
 
 class JointStatePublisher : public rclcpp::Node {
 public:
