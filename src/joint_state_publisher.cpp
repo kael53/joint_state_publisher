@@ -99,8 +99,8 @@ private:
     };
 
     js.position.resize(js.name.size(), 0.0);
-    js.velocity.resize(js.name.size(), 0.0);
-    js.effort.resize(js.name.size(), 0.0);
+    //js.velocity.resize(js.name.size(), 0.0);
+    //js.effort.resize(js.name.size(), 0.0);
 
     for (size_t i = 0; i < 29; ++i) {
       if (i == 13 || i == 14) continue; // fixed waist roll, pitch joints
