@@ -121,7 +121,7 @@ private:
         //js.velocity[target_index] = left_joints_[i].dq;
         //js.effort[target_index] = left_joints_[i].tau_est;
 
-        target_index = 27 + i;
+        target_index = 34 + i;
         js.position[target_index] = right_joints_[i].q;
         //js.velocity[target_index] = right_joints_[i].dq;
         //js.effort[target_index] = right_joints_[i].tau_est;
