@@ -12,6 +12,8 @@ public:
       lowstate_joints_(35, unitree_hg::msg::MotorState()),
       left_joints_(7, unitree_hg::msg::MotorState()),
       right_joints_(7, unitree_hg::msg::MotorState()) {
+    RCLCPP_INFO(this->get_logger(), "Joint State Publisher Node Initialized");
+
     joint_state_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("/joint_states", 10);
     
     lowstate_sub_ = this->create_subscription<unitree_hg::msg::LowState>(
@@ -98,6 +100,8 @@ private:
       "right_hand_index_1_joint"
     };
 
+    RCLCPP_DEBUG(this->get_logger(), "Number of joints: %d", js.name.size());
+
     js.position.resize(js.name.size(), 0.0);
     //js.velocity.resize(js.name.size(), 0.0);
     //js.effort.resize(js.name.size(), 0.0);
@@ -110,6 +114,8 @@ private:
       if (i > 14 && i < 22) { target_index = i - 2; }
       else if (i > 21) { target_index = i + 5; }
 
+      RCLCPP_DEBUG(this->get_logger(), "Target index: %d name: %s lowstate_joints_: %d", target_index, js.name[target_index], i);
+
       js.position[target_index] = lowstate_joints_[i].q;
       //js.velocity[target_index] = lowstate_joints_[i].dq;
       //js.effort[target_index] = lowstate_joints_[i].tau_est;
@@ -121,10 +127,14 @@ private:
         //js.velocity[target_index] = left_joints_[i].dq;
         //js.effort[target_index] = left_joints_[i].tau_est;
 
+        RCLCPP_DEBUG(this->get_logger(), "Target index: %d name: %s left_joints_: %d", target_index, js.name[target_index], i);
+
         target_index = 34 + i;
         js.position[target_index] = right_joints_[i].q;
         //js.velocity[target_index] = right_joints_[i].dq;
         //js.effort[target_index] = right_joints_[i].tau_est;
+
+        RCLCPP_DEBUG(this->get_logger(), "Target index: %d name: %s right_joints_: %d", target_index, js.name[target_index], i);
     }
 
     joint_state_pub_->publish(js);
