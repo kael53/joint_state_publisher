@@ -1,21 +1,42 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>joint_state_publisher</name>
+  <name>unitree_g1_dex3_stack</name>
   <version>0.1.0</version>
-  <description>Node to publish unitree joint states</description>
+  <description>Full manipulation stack for the Unitree G1 humanoid robot with DEX3 hands: joint state publishing, hand control, trajectory execution, and OMPL+FCL+IK-based planning.</description>
 
-  <maintainer email="you@example.com">Your Name</maintainer>
+  <maintainer email="keremkahraman53@gmail.com">Muhammed Kerem Kahraman</maintainer>
   <license>MIT</license>
 
-  <!-- Core dependencies -->
+  <!-- Core build tool -->
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <!-- ROS2 core dependencies -->
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
-  <depend>unitree_hg</depend>
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>trajectory_msgs</depend>
+
+  <!-- Unitree custom messages -->
+  <depend>unitree_hg</depend>
+
+  <!-- URDF and robot model -->
+  <depend>urdf</depend>
+  <depend>kdl_parser</depend>
+
+  <!-- IK, planning, and collision -->
+  <depend>trac_ik_lib</depend>
+  <depend>ompl</depend>
+  <depend>fcl</depend>
+  <depend>geometric_shapes</depend>
+  <depend>resource_retriever</depend>
+
+  <!-- Perception message types -->
+  <depend>vision_msgs</depend>
+
+  <!-- ament_index_cpp for resource lookup -->
+  <depend>ament_index_cpp</depend>
 
   <!-- Export information for build tools -->
   <export>

@@ -1,4 +1,4 @@
-<robot name="g1_29dof_lock_waist_with_hand_rev_1_0">
+<robot name="g1_29dof_with_hand_rev_1_0">
   <mujoco>
     <compiler meshdir="meshes" discardvisual="false"/>
   </mujoco>
@@ -479,7 +479,7 @@
       </material>
     </visual>
   </link>
-  <joint name="waist_roll_joint" type="fixed">
+  <joint name="waist_roll_joint" type="revolute">
     <origin xyz="-0.0039635 0 0.044" rpy="0 0 0"/>
     <parent link="waist_yaw_link"/>
     <child link="waist_roll_link"/>
@@ -508,7 +508,7 @@
       </geometry>
     </collision>
   </link>
-  <joint name="waist_pitch_joint" type="fixed">
+  <joint name="waist_pitch_joint" type="revolute">
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <parent link="waist_roll_link"/>
     <child link="torso_link"/>

@@ -5,14 +5,54 @@
 #include <unitree_hg/msg/low_state.hpp>
 #include <unitree_hg/msg/hand_state.hpp>
 
+#include <urdf/model.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <rclcpp/parameter_client.hpp>
+
+#include <g1_dex3_joint_defs.hpp>
+
 class JointStatePublisher : public rclcpp::Node {
 public:
   JointStatePublisher()
-  : Node("joint_state_publisher"),
-      lowstate_joints_(35, unitree_hg::msg::MotorState()),
-      left_joints_(7, unitree_hg::msg::MotorState()),
-      right_joints_(7, unitree_hg::msg::MotorState()) {
+  : Node("joint_state_publisher") {
     RCLCPP_INFO(this->get_logger(), "Joint State Publisher Node Initialized");
+
+    // Fetch URDF from /robot_description parameter
+    std::string urdf_xml;
+    if (!this->get_parameter_or<std::string>("robot_description", urdf_xml, "")) {
+      // Try global parameter
+      auto param_client = std::make_shared<rclcpp::SyncParametersClient>(this);
+      if (param_client->has_parameter("/robot_description")) {
+        urdf_xml = param_client->get_parameter<std::string>("/robot_description");
+      }
+    }
+    urdf::Model model;
+    if (!urdf_xml.empty()) {
+      if (!model.initString(urdf_xml)) {
+        RCLCPP_FATAL(this->get_logger(), "Failed to parse URDF from /robot_description parameter");
+        rclcpp::shutdown();
+        return;
+      } else {
+        for (const auto& joint : model.joints_) {
+          if (joint.second->type == urdf::Joint::REVOLUTE ||
+              joint.second->type == urdf::Joint::PRISMATIC ||
+              joint.second->type == urdf::Joint::CONTINUOUS) {
+            js_names_.push_back(joint.first);
+          }
+        }
+        RCLCPP_INFO(this->get_logger(), "Loaded %zu joints from /robot_description", js_names_.size());
+      }
+    } else {
+      RCLCPP_FATAL(this->get_logger(), "Could not fetch /robot_description parameter. Exiting.");
+      rclcpp::shutdown();
+      return;
+    }
+
+    // Dynamically size state vectors based on joint maps
+    auto hand_joint_count = hand_joint_name_to_index.size() / 2; // 2 hands
+    lowstate_joints_.resize(joint_name_to_index.size(), unitree_hg::msg::MotorState());
+    left_hand_joints_.resize(hand_joint_count, unitree_hg::msg::MotorState());
+    right_hand_joints_.resize(hand_joint_count, unitree_hg::msg::MotorState());
 
     joint_state_pub_ = this->create_publisher<sensor_msgs::msg::JointState>("/joint_states", 10);
     
@@ -32,10 +72,11 @@ public:
   }
 
 private:
+  std::vector<std::string> js_names_;
   // Store latest joint values
   std::vector<unitree_hg::msg::MotorState> lowstate_joints_;
-  std::vector<unitree_hg::msg::MotorState> left_joints_;
-  std::vector<unitree_hg::msg::MotorState> right_joints_;
+  std::vector<unitree_hg::msg::MotorState> left_hand_joints_;
+  std::vector<unitree_hg::msg::MotorState> right_hand_joints_;
 
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_pub_;
   rclcpp::Subscription<unitree_hg::msg::LowState>::SharedPtr lowstate_sub_;
@@ -47,96 +88,39 @@ private:
     lowstate_joints_.assign(msg->motor_state.begin(), msg->motor_state.end());
   }
   void left_state_callback(const unitree_hg::msg::HandState::SharedPtr msg) {
-    left_joints_.assign(msg->motor_state.begin(), msg->motor_state.end());
+    left_hand_joints_.assign(msg->motor_state.begin(), msg->motor_state.end());
   }
   void right_state_callback(const unitree_hg::msg::HandState::SharedPtr msg) {
-    right_joints_.assign(msg->motor_state.begin(), msg->motor_state.end());
+    right_hand_joints_.assign(msg->motor_state.begin(), msg->motor_state.end());
   }
 
   void publish_joint_states() {
     sensor_msgs::msg::JointState js;
     js.header.stamp = this->now();
-    js.name = {
-      "left_hip_pitch_joint",
-      "left_hip_roll_joint",
-      "left_hip_yaw_joint",
-      "left_knee_joint",
-      "left_ankle_pitch_joint",
-      "left_ankle_roll_joint",
-      "right_hip_pitch_joint",
-      "right_hip_roll_joint",
-      "right_hip_yaw_joint",
-      "right_knee_joint",
-      "right_ankle_pitch_joint",
-      "right_ankle_roll_joint",
-      "waist_yaw_joint",
-      "left_shoulder_pitch_joint",
-      "left_shoulder_roll_joint",
-      "left_shoulder_yaw_joint",
-      "left_elbow_joint",
-      "left_wrist_roll_joint",
-      "left_wrist_pitch_joint",
-      "left_wrist_yaw_joint",
-      "left_hand_thumb_0_joint",
-      "left_hand_thumb_1_joint",
-      "left_hand_thumb_2_joint",
-      "left_hand_middle_0_joint",
-      "left_hand_middle_1_joint",
-      "left_hand_index_0_joint",
-      "left_hand_index_1_joint",
-      "right_shoulder_pitch_joint",
-      "right_shoulder_roll_joint",
-      "right_shoulder_yaw_joint",
-      "right_elbow_joint",
-      "right_wrist_roll_joint",
-      "right_wrist_pitch_joint",
-      "right_wrist_yaw_joint",
-      "right_hand_thumb_0_joint",
-      "right_hand_thumb_1_joint",
-      "right_hand_thumb_2_joint",
-      "right_hand_middle_0_joint",
-      "right_hand_middle_1_joint",
-      "right_hand_index_0_joint",
-      "right_hand_index_1_joint"
-    };
-
-    RCLCPP_DEBUG(this->get_logger(), "Number of joints: %d", js.name.size());
-
+    js.name = js_names_;
     js.position.resize(js.name.size(), 0.0);
-    //js.velocity.resize(js.name.size(), 0.0);
-    //js.effort.resize(js.name.size(), 0.0);
 
-    for (size_t i = 0; i < 29; ++i) {
-      if (i == 13 || i == 14) continue; // fixed waist roll, pitch joints
-
-      size_t target_index = i;
-
-      if (i > 14 && i < 22) { target_index = i - 2; }
-      else if (i > 21) { target_index = i + 5; }
-
-      RCLCPP_DEBUG(this->get_logger(), "Target index: %d name: %s lowstate_joints_: %d", target_index, js.name[target_index], i);
-
-      js.position[target_index] = lowstate_joints_[i].q;
-      //js.velocity[target_index] = lowstate_joints_[i].dq;
-      //js.effort[target_index] = lowstate_joints_[i].tau_est;
+    // Use the provided name-index maps for assignment
+    for (const auto& pair : joint_name_to_index) {
+      auto idx = pair.second;
+      auto it = std::find(js.name.begin(), js.name.end(), pair.first);
+      if (it != js.name.end() && idx < lowstate_joints_.size()) {
+        size_t js_idx = std::distance(js.name.begin(), it);
+        js.position[js_idx] = lowstate_joints_[idx].q;
+      }
     }
-
-    for (size_t i = 0; i < 7; ++i) {
-        size_t target_index = 20 + i;
-        js.position[target_index] = left_joints_[i].q;
-        //js.velocity[target_index] = left_joints_[i].dq;
-        //js.effort[target_index] = left_joints_[i].tau_est;
-
-        RCLCPP_DEBUG(this->get_logger(), "Target index: %d name: %s left_joints_: %d", target_index, js.name[target_index], i);
-
-        target_index = 34 + i;
-        js.position[target_index] = right_joints_[i].q;
-        //js.velocity[target_index] = right_joints_[i].dq;
-        //js.effort[target_index] = right_joints_[i].tau_est;
-
-        RCLCPP_DEBUG(this->get_logger(), "Target index: %d name: %s right_joints_: %d", target_index, js.name[target_index], i);
+    for (const auto& pair : hand_joint_name_to_index) {
+      auto idx = pair.second;
+      auto it = std::find(js.name.begin(), js.name.end(), pair.first);
+      if (it != js.name.end()) {
+        size_t js_idx = std::distance(js.name.begin(), it);
+        if (pair.first.find("left_") == 0) {
+          js.position[js_idx] = left_hand_joints_[idx].q;
+        } else if (pair.first.find("right_") == 0) {
+          js.position[js_idx] = right_hand_joints_[idx].q;
+        }
+      }
     }
-
     joint_state_pub_->publish(js);
   }
 };
