@@ -1,5 +1,3 @@
-// ik_fcl_ompl_planner.cpp
-
 #include <rclcpp/rclcpp.hpp>
 #include <vision_msgs/msg/detection3_d_array.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -42,7 +40,6 @@ public:
     IKFCLPlannerNode() : Node("ik_fcl_ompl_planner")
     {
         // Parameterization
-        this->declare_parameter("robot_description", "");
         this->declare_parameter("trajectory_time_step", 0.05);
         this->declare_parameter("planning_timeout", 1.0);
         this->declare_parameter("base_link", "pelvis");
@@ -54,8 +51,22 @@ public:
         this->declare_parameter("collision_skip_pairs", std::vector<std::string>{});
         this->declare_parameter("log_level", "info");
 
+        // Fetch robot_description from global parameter server
         std::string urdf_str;
-        this->get_parameter("robot_description", urdf_str);
+        if (!this->get_parameter_or<std::string>("robot_description", urdf_str, std::string())) {
+            if (!this->get_node_parameters_interface()->has_parameter("robot_description")) {
+                auto param_client = std::make_shared<rclcpp::SyncParametersClient>(this, "");
+                if (param_client->has_parameter("robot_description")) {
+                    urdf_str = param_client->get_parameter<std::string>("robot_description");
+                }
+            }
+        }
+        if (urdf_str.empty()) {
+            RCLCPP_FATAL(this->get_logger(), "robot_description parameter is missing or empty. Cannot continue.");
+            rclcpp::shutdown();
+            return;
+        }
+
         double time_step;
         this->get_parameter("trajectory_time_step", time_step);
         double planning_timeout;

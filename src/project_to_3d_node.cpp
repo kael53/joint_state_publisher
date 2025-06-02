@@ -42,24 +42,46 @@ struct Detection {
 class ProjectTo3DNode : public rclcpp::Node {
 public:
   ProjectTo3DNode() : Node("project_to_3d_node") {
+    // Declare parameters with defaults
+    this->declare_parameter<std::string>("rgb_topic", "/camera/color/image_raw");
+    this->declare_parameter<std::string>("depth_topic", "/camera/aligned_depth_to_color/image_raw");
+    this->declare_parameter<std::string>("camera_info_topic", "/camera/color/camera_info");
+    this->declare_parameter<std::string>("detections_topic", "/yolox/bounding_boxes");
+    this->declare_parameter<std::string>("pointcloud_topic", "/objects_3d");
+    this->declare_parameter<std::string>("detection3d_topic", "/detections_3d");
+    this->declare_parameter<std::string>("output_frame", "d435_link");
+    this->declare_parameter<std::vector<std::string>>("allowed_classes", {"cup", "bottle", "book", "bowl"});
+
+    std::string rgb_topic, depth_topic, camera_info_topic, detections_topic, pointcloud_topic, detection3d_topic, output_frame;
+    std::vector<std::string> allowed_classes;
+    this->get_parameter("rgb_topic", rgb_topic);
+    this->get_parameter("depth_topic", depth_topic);
+    this->get_parameter("camera_info_topic", camera_info_topic);
+    this->get_parameter("detections_topic", detections_topic);
+    this->get_parameter("pointcloud_topic", pointcloud_topic);
+    this->get_parameter("detection3d_topic", detection3d_topic);
+    this->get_parameter("output_frame", output_frame);
+    this->get_parameter("allowed_classes", allowed_classes);
 
     RCLCPP_INFO(this->get_logger(), "Project To 3D Object Node Initialized");
     
-    rgb_sub_.subscribe(this, "/camera/color/image_raw");
-    depth_sub_.subscribe(this, "/camera/aligned_depth_to_color/image_raw");
-    info_sub_.subscribe(this, "/camera/color/camera_info");
+    rgb_sub_.subscribe(this, rgb_topic);
+    depth_sub_.subscribe(this, depth_topic);
+    info_sub_.subscribe(this, camera_info_topic);
 
-    detections_sub_ = this->create_subscription<bboxes_ex_msgs::msg::BoundingBoxes>("/yolox/bounding_boxes", 10,
-        std::bind(&ProjectTo3DNode::detectionsCallback, this, std::placeholders::_1));
+    detections_sub_ = this->create_subscription<bboxes_ex_msgs::msg::BoundingBoxes>(
+      detections_topic, 10,
+      std::bind(&ProjectTo3DNode::detectionsCallback, this, std::placeholders::_1));
 
 
     sync_.reset(new Sync(SyncPolicy(10), rgb_sub_, depth_sub_, info_sub_));
     sync_->registerCallback(std::bind(&ProjectTo3DNode::imageCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-    pointcloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/objects_3d", 10);
-    detection_pub_ = this->create_publisher<vision_msgs::msg::Detection3DArray>("/detections_3d", 10);
+    pointcloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(pointcloud_topic, 10);
+    detection_pub_ = this->create_publisher<vision_msgs::msg::Detection3DArray>(detection3d_topic, 10);
 
-    allowed_classes_ = {"cup", "bottle", "book", "bowl"};
+    allowed_classes_ = allowed_classes;
+    output_frame_ = output_frame;
   }
 
 private:
@@ -79,6 +101,7 @@ private:
   rclcpp::Publisher<vision_msgs::msg::Detection3DArray>::SharedPtr detection_pub_;
 
   std::vector<std::string> allowed_classes_;
+  std::string output_frame_;
 
   void imageCallback(
       const sensor_msgs::msg::Image::ConstSharedPtr &rgb_msg,
@@ -116,32 +139,32 @@ private:
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr total_cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
       vision_msgs::msg::Detection3DArray detection_array;
 
-      // Set output frame to d435_link
-      std::string output_frame = "d435_link";
+      // Use parameterized output frame
       detection_array.header = rgb_msg->header;
-      detection_array.header.frame_id = output_frame;
+      detection_array.header.frame_id = output_frame_;
 
       for (const auto &det : detections) {
-        if (std::find(allowed_classes_.begin(), allowed_classes_.end(), det.class_name) == allowed_classes_.end()) {
-          RCLCPP_WARN(this->get_logger(), "Skipping detection: %s", det.class_name.c_str());
+        // If allowed_classes_ is empty, allow all classes
+        if (!allowed_classes_.empty() && std::find(allowed_classes_.begin(), allowed_classes_.end(), det.class_name) == allowed_classes_.end()) {
+          RCLCPP_DEBUG(this->get_logger(), "Skipping detection: %s", det.class_name.c_str());
           continue;
         }
         if (det.confidence < 0.3) {
-          RCLCPP_WARN(this->get_logger(), "Skipping detection with low confidence: %s (%.2f)", det.class_name.c_str(), det.confidence);
+          RCLCPP_DEBUG(this->get_logger(), "Skipping detection with low confidence: %s (%.2f)", det.class_name.c_str(), det.confidence);
           continue;
         }
 
         if (det.x_min < 0 || det.y_min < 0 || det.x_max > rgb.cols || det.y_max > rgb.rows) {
-          RCLCPP_WARN(this->get_logger(), "Skipping detection with out-of-bounds coordinates: %s", det.class_name.c_str());
+          RCLCPP_DEBUG(this->get_logger(), "Skipping detection with out-of-bounds coordinates: %s", det.class_name.c_str());
           continue;
         }
 
         if (det.x_min >= det.x_max || det.y_min >= det.y_max) {
-          RCLCPP_WARN(this->get_logger(), "Skipping detection with invalid bounding box: %s", det.class_name.c_str());
+          RCLCPP_DEBUG(this->get_logger(), "Skipping detection with invalid bounding box: %s", det.class_name.c_str());
           continue;
         }
 
-        RCLCPP_WARN(this->get_logger(), "Processing detection: %s (confidence: %.2f)", det.class_name.c_str(), det.confidence);
+        RCLCPP_DEBUG(this->get_logger(), "Processing detection: %s (confidence: %.2f)", det.class_name.c_str(), det.confidence);
         try {
           cv::Mat roi = depth(cv::Rect(det.x_min, det.y_min, det.x_max - det.x_min, det.y_max - det.y_min));
           pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -173,11 +196,11 @@ private:
           // Use cloud for further processing (no clustering)
           float coverage = float(cloud->size()) / (roi.rows * roi.cols);
           if (coverage < 0.1) {
-            RCLCPP_WARN(this->get_logger(), "Skipping detection with low coverage: %s (coverage: %.2f)", det.class_name.c_str(), coverage);
+            RCLCPP_DEBUG(this->get_logger(), "Skipping detection with low coverage: %s (coverage: %.2f)", det.class_name.c_str(), coverage);
             continue;
           }
 
-          RCLCPP_WARN(this->get_logger(), "Processing cloud with %zu points and coverage %f for detection: %s", cloud->size(), coverage, det.class_name.c_str());
+          RCLCPP_DEBUG(this->get_logger(), "Processing cloud with %zu points and coverage %f for detection: %s", cloud->size(), coverage, det.class_name.c_str());
 
           pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
           sor.setInputCloud(cloud);
@@ -200,35 +223,35 @@ private:
           }
 
           if (all_nan) {
-            RCLCPP_WARN(this->get_logger(), "All points are NaN/Inf for detection: %s", det.class_name.c_str());
+            RCLCPP_DEBUG(this->get_logger(), "All points are NaN/Inf for detection: %s", det.class_name.c_str());
             continue;
           }
 
           *total_cloud += *cloud;
 
-          RCLCPP_WARN(this->get_logger(), "Filtered cloud size: %zu points for detection: %s", cloud->size(), det.class_name.c_str());
+          RCLCPP_DEBUG(this->get_logger(), "Filtered cloud size: %zu points for detection: %s", cloud->size(), det.class_name.c_str());
 
           std::vector<int> indices;
           pcl::removeNaNFromPointCloud(*cloud, *cloud, indices);
           if (cloud->empty()) {
-            RCLCPP_WARN(this->get_logger(), "Cloud is empty after removing NaNs for detection: %s", det.class_name.c_str());
+            RCLCPP_DEBUG(this->get_logger(), "Cloud is empty after removing NaNs for detection: %s", det.class_name.c_str());
             continue;
           }
 
           Eigen::Vector4f centroid;
           pcl::compute3DCentroid(*cloud, centroid);
 
-          RCLCPP_WARN(this->get_logger(), "Centroid for detection %s: (%f, %f, %f)", det.class_name.c_str(), centroid[0], centroid[1], centroid[2]);
+          RCLCPP_DEBUG(this->get_logger(), "Centroid for detection %s: (%f, %f, %f)", det.class_name.c_str(), centroid[0], centroid[1], centroid[2]);
 
           pcl::PointXYZRGB min_pt, max_pt;
           pcl::getMinMax3D(*cloud, min_pt, max_pt);
 
-          RCLCPP_WARN(this->get_logger(), "Bounding box for detection %s: min(%f, %f, %f), max(%f, %f, %f)", 
+          RCLCPP_DEBUG(this->get_logger(), "Bounding box for detection %s: min(%f, %f, %f), max(%f, %f, %f)", 
                        det.class_name.c_str(), min_pt.x, min_pt.y, min_pt.z, max_pt.x, max_pt.y, max_pt.z);
 
           vision_msgs::msg::Detection3D detection;
           detection.header = rgb_msg->header;
-          detection.header.frame_id = output_frame;
+          detection.header.frame_id = output_frame_;
 
           vision_msgs::msg::ObjectHypothesisWithPose hypo;
           hypo.id = det.class_name;
@@ -260,7 +283,7 @@ private:
       sensor_msgs::msg::PointCloud2 cloud_msg;
       pcl::toROSMsg(*total_cloud, cloud_msg);
       cloud_msg.header = rgb_msg->header;
-      cloud_msg.header.frame_id = output_frame;
+      cloud_msg.header.frame_id = output_frame_;
       pointcloud_pub_->publish(cloud_msg);
       detection_pub_->publish(detection_array);
     } catch (const cv::Exception& e) {
