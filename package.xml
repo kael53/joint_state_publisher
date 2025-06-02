@@ -3,7 +3,7 @@
 <package format="3">
   <name>unitree_g1_dex3_stack</name>
   <version>0.1.0</version>
-  <description>Full manipulation stack for the Unitree G1 humanoid robot with DEX3 hands: joint state publishing, hand control, trajectory execution, and OMPL+FCL+IK-based planning.</description>
+  <description>Full manipulation stack for the Unitree G1 humanoid robot with DEX3 hands: joint state publishing, hand control, trajectory execution, OMPL+FCL+IK-based planning, and 2D object detection to 3D object projection using depth images.</description>
 
   <maintainer email="keremkahraman53@gmail.com">Muhammed Kerem Kahraman</maintainer>
 
@@ -31,8 +31,17 @@
   <depend>geometric_shapes</depend>
   <depend>resource_retriever</depend>
 
+  <!-- OpenCV dependency -->
+  <depend>OpenCV</depend>
+
   <!-- Perception message types -->
   <depend>vision_msgs</depend>
+  <depend>bboxes_ex_msgs</depend>
+  <depend>cv_bridge</depend>
+  <depend>image_transport</depend>
+  <depend>message_filters</depend>
+  <depend>pcl_conversions</depend>
+  <depend>pcl_msgs</depend>
 
   <!-- ament_index_cpp for resource lookup -->
   <depend>ament_index_cpp</depend>
