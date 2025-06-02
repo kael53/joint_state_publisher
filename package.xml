@@ -6,6 +6,7 @@
   <description>Full manipulation stack for the Unitree G1 humanoid robot with DEX3 hands: joint state publishing, hand control, trajectory execution, OMPL+FCL+IK-based planning, and 2D object detection to 3D object projection using depth images.</description>
 
   <maintainer email="keremkahraman53@gmail.com">Muhammed Kerem Kahraman</maintainer>
+  <license>None</license>
 
   <!-- Core build tool -->
   <buildtool_depend>ament_cmake</buildtool_depend>

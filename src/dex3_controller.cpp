@@ -48,7 +48,7 @@ public:
     std::string input_topic;
     this->get_parameter("input_topic", input_topic);
 
-    hand_pub_ = this->create_publisher<unitree_hg::msg::HandCmd>(output_topic, 10);
+    hand_cmd_pub_ = this->create_publisher<unitree_hg::msg::HandCmd>(output_topic, 10);
     // Subscribe to high-level commands (e.g., "open hand", "close hand")
     hand_cmd_sub_ = this->create_subscription<std_msgs::msg::Bool>(
       input_topic, 10,
@@ -61,23 +61,38 @@ public:
       std::bind(&Dex3Controller::handStateCallback, this, std::placeholders::_1));
 
     // Load URDF from /robot_description parameter and parse joint limits
-    std::string robot_description;
-    if (!this->get_parameter_or<std::string>("robot_description", robot_description, std::string())) {
-      if (!this->get_node_parameters_interface()->has_parameter("robot_description")) {
-        // Try to get from global parameter server
-        auto param_client = std::make_shared<rclcpp::SyncParametersClient>(this, "");
-        if (param_client->has_parameter("robot_description")) {
-          robot_description = param_client->get_parameter<std::string>("robot_description");
-        }
-      }
+    std::string urdf_xml;
+    auto client = this->create_client<rcl_interfaces::srv::GetParameters>("/robot_state_publisher/get_parameters");
+    while (!client->wait_for_service(std::chrono::seconds(1))) {
+      RCLCPP_INFO(this->get_logger(), "Waiting for /robot_state_publisher service...");
     }
-    if (robot_description.empty()) {
+    
+    auto request = std::make_shared<rcl_interfaces::srv::GetParameters::Request>();
+    request->names.push_back("robot_description");
+
+    auto future = client->async_send_request(request);
+    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), future) == rclcpp::FutureReturnCode::SUCCESS) {
+      auto response = future.get();
+      if (response->values.size() == 1 && response->values[0].type == rcl_interfaces::msg::ParameterType::PARAMETER_STRING) {
+        urdf_xml = response->values[0].string_value;
+      } else {
+        RCLCPP_FATAL(this->get_logger(), "robot_description not found in /robot_state_publisher");
+        rclcpp::shutdown();
+        return;
+      }
+    } else {
+      RCLCPP_FATAL(this->get_logger(), "Failed to connect to /robot_state_publisher/get_parameters service");
+      rclcpp::shutdown();
+      return;
+    }
+
+    if (urdf_xml.empty()) {
       RCLCPP_ERROR(this->get_logger(), "robot_description parameter is missing or empty. Cannot continue.");
       rclcpp::shutdown();
       return;
     }
     urdf::Model model;
-    if (!model.initString(robot_description)) {
+    if (!model.initString(urdf_xml)) {
       RCLCPP_ERROR(this->get_logger(), "Failed to parse URDF from robot_description parameter");
       rclcpp::shutdown();
       return;
@@ -111,6 +126,10 @@ public:
     RCLCPP_INFO(this->get_logger(), "Loaded %zu hand joints for side '%s' (base link: %s) from robot_description", hand_joint_names.size(), side.c_str(), hand_base_link.c_str());
 
     RCLCPP_INFO(this->get_logger(), "Dex3Controller started. Subscribing to %s, publishing to %s, feedback from %s", input_topic.c_str(), output_topic.c_str(), state_topic.c_str());
+
+    // Timer for periodic closed-loop grasping (20 Hz)
+    closed_loop_timer_ = this->create_wall_timer(
+      50ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
   }
 private:
   void handCmdCallback(const std_msgs::msg::Bool::SharedPtr msg) {
@@ -158,7 +177,7 @@ private:
         RCLCPP_DEBUG(this->get_logger(), "Setting hand joint %s to position %f", joint_name.c_str(), target_position);
       }
       // Publish the hand command to open it fully
-      hand_cmd_pub->publish(hand_cmd);
+      hand_cmd_pub_->publish(hand_cmd);
     } else {
       RCLCPP_INFO(this->get_logger(), "Received close hand command");
       if (!closing_) {
@@ -169,36 +188,36 @@ private:
   }
 
   void handStateCallback(const unitree_hg::msg::HandState::SharedPtr msg) {
-    RCLCPP_DEBUG(this->get_logger(), "Received hand state feedback (seq=%u)", msg->header.stamp.sec);
+    RCLCPP_DEBUG(this->get_logger(), "Received hand state feedback");
     // Aggregate tactile sensor values for thumb, index, middle, and palm, using only valid values and scaling
     float thumb_sum = 0.0f, index_sum = 0.0f, middle_sum = 0.0f, palm_sum = 0.0f;
-    int thumb_count = 0, index_count = 0, middle_count = 0, palm_count = 0;
+    size_t thumb_count = 0, index_count = 0, middle_count = 0, palm_count = 0;
     for (const auto& press : msg->press_sensor_state) {
       // Thumb: indices 0, 1
-      for (int idx : {0, 1}) {
-        if (idx < press.data.size() && press.data[idx] != 30000) {
-          thumb_sum += press.data[idx] / 10000.0f;
+      for (size_t idx : {0, 1}) {
+        if (idx < press.pressure.size() && press.pressure[idx] != 30000) {
+          thumb_sum += press.pressure[idx] / 10000.0f;
           ++thumb_count;
         }
       }
       // Index: indices 4, 5
-      for (int idx : {4, 5}) {
-        if (idx < press.data.size() && press.data[idx] != 30000) {
-          index_sum += press.data[idx] / 10000.0f;
+      for (size_t idx : {4, 5}) {
+        if (idx < press.pressure.size() && press.pressure[idx] != 30000) {
+          index_sum += press.pressure[idx] / 10000.0f;
           ++index_count;
         }
       }
       // Middle: indices 2, 3
-      for (int idx : {2, 3}) {
-        if (idx < press.data.size() && press.data[idx] != 30000) {
-          middle_sum += press.data[idx] / 10000.0f;
+      for (size_t idx : {2, 3}) {
+        if (idx < press.pressure.size() && press.pressure[idx] != 30000) {
+          middle_sum += press.pressure[idx] / 10000.0f;
           ++middle_count;
         }
       }
       // Palm: indices 6, 7, 8
-      for (int idx : {6, 7, 8}) {
-        if (idx < press.data.size() && press.data[idx] != 30000) {
-          palm_sum += press.data[idx] / 10000.0f;
+      for (size_t idx : {6, 7, 8}) {
+        if (idx < press.pressure.size() && press.pressure[idx] != 30000) {
+          palm_sum += press.pressure[idx] / 10000.0f;
           ++palm_count;
         }
       }
@@ -215,37 +234,20 @@ private:
     RCLCPP_DEBUG(this->get_logger(), "Tactile thumb avg: %f, finger/palm avg: %f", thumb_avg, finger_palm_avg);
   }
 
-  std::vector<std::string> hand_joint_names;
-  bool closing_ = false;
-  rclcpp::Publisher<unitree_hg::msg::HandCmd>::SharedPtr hand_pub_;
-  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr hand_cmd_sub_;
-  rclcpp::Subscription<unitree_hg::msg::HandState>::SharedPtr hand_state_sub_;
-  std::map<std::string, JointLimits> joint_limits_;
-
-  double thumb_tactile_ = 0.0;
-  double finger_tactile_ = 0.0;
-};
-
-int main(int argc, char **argv) {
-  rclcpp::init(argc, argv);
-  auto node = std::make_shared<Dex3Controller>();
-  rclcpp::WallRate loop_rate(20); // 20 Hz main loop
-  // Persistent state for grasping
-  std::vector<float> open_positions, closed_positions, interp_positions;
-  bool initialized = false;
-  while (rclcpp::ok()) {
-    rclcpp::spin_some(node);
-    if (node->closing_) {
+  void closedLoopGrasping() {
+    static std::vector<float> open_positions, closed_positions, interp_positions;
+    static bool initialized = false;
+    if (closing_) {
       // Initialize joint positions if not done
       if (!initialized) {
-        size_t n = node->hand_joint_names.size();
+        size_t n = hand_joint_names.size();
         open_positions.resize(n, 0.0f);
         closed_positions.resize(n, 0.0f);
         interp_positions.resize(n, 0.0f);
         for (size_t i = 0; i < n; ++i) {
-          const auto& joint_name = node->hand_joint_names[i];
-          auto lim_it = node->joint_limits_.find(joint_name);
-          if (lim_it != node->joint_limits_.end()) {
+          const auto& joint_name = hand_joint_names[i];
+          auto lim_it = joint_limits_.find(joint_name);
+          if (lim_it != joint_limits_.end()) {
             const auto& lim = lim_it->second;
             if (joint_name.find("thumb_0") != std::string::npos) {
               float mid = 0.5f * (lim.lower + lim.upper);
@@ -264,15 +266,15 @@ int main(int argc, char **argv) {
       // Feedback-driven grasp maintenance
       const float step_fraction = 0.05f;
       const double tactile_threshold = 0.5;
-      double thumb_val = node->thumb_tactile_;
-      double finger_val = node->finger_tactile_;
+      double thumb_val = thumb_tactile_;
+      double finger_val = finger_tactile_;
       bool need_regrip = !(thumb_val > tactile_threshold && finger_val > tactile_threshold);
       if (need_regrip) {
         bool all_reached = true;
         unitree_hg::msg::HandCmd interp_cmd;
-        interp_cmd.motor_cmd.resize(node->hand_joint_names.size());
-        for (size_t i = 0; i < node->hand_joint_names.size(); ++i) {
-          const auto& joint_name = node->hand_joint_names[i];
+        interp_cmd.motor_cmd.resize(hand_joint_names.size());
+        for (size_t i = 0; i < hand_joint_names.size(); ++i) {
+          const auto& joint_name = hand_joint_names[i];
           RIS_Mode_t ris_mode;
           ris_mode.id = i;
           ris_mode.status = 0x01;
@@ -301,11 +303,27 @@ int main(int argc, char **argv) {
           interp_cmd.motor_cmd[i].kd = 0.1f;
           interp_cmd.motor_cmd[i].tau = 0.0f;
         }
-        node->hand_pub_->publish(interp_cmd);
+        hand_cmd_pub_->publish(interp_cmd);
       }
     }
-    loop_rate.sleep();
   }
+
+  std::vector<std::string> hand_joint_names;
+  bool closing_ = false;
+  rclcpp::Publisher<unitree_hg::msg::HandCmd>::SharedPtr hand_cmd_pub_;
+  rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr hand_cmd_sub_;
+  rclcpp::Subscription<unitree_hg::msg::HandState>::SharedPtr hand_state_sub_;
+  std::map<std::string, JointLimits> joint_limits_;
+
+  double thumb_tactile_ = 0.0;
+  double finger_tactile_ = 0.0;
+
+  rclcpp::TimerBase::SharedPtr closed_loop_timer_;
+};
+
+int main(int argc, char **argv) {
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<Dex3Controller>());
   rclcpp::shutdown();
   return 0;
 }

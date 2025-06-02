@@ -6,9 +6,9 @@ if(NOT CMAKE_C_STANDARD)
   set(CMAKE_C_STANDARD 99)
 endif()
 
-# Default to C++14
+# Default to C++17
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 17)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -44,6 +44,9 @@ include_directories(
   include
   ${OpenCV_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
+  ${OMPL_INCLUDE_DIRS}
+  ${FCL_INCLUDE_DIRS}
+  ${TRAC_IK_INCLUDE_DIRS}
 )
 
 add_executable(joint_state_publisher src/joint_state_publisher.cpp)
@@ -67,6 +70,12 @@ ament_target_dependencies(ik_fcl_ompl_planner
 
 ament_target_dependencies(project_to_3d_node
   rclcpp vision_msgs bboxes_ex_msgs sensor_msgs geometry_msgs std_msgs cv_bridge image_transport message_filters pcl_conversions
+)
+
+target_link_libraries(ik_fcl_ompl_planner
+  ${OMPL_LIBRARIES}
+  ${FCL_LIBRARIES}
+  ${TRAC_IK_LIBRARIES}
 )
 
 target_link_libraries(project_to_3d_node

@@ -37,20 +37,42 @@ public:
     RCLCPP_INFO(this->get_logger(), "Joint Trajectory Executor Node Initialized");
 
     cmd_pub_ = this->create_publisher<unitree_hg::msg::LowCmd>("/arm_sdk", 10);
-    left_hand_pub_ = this->create_publisher<unitree_hg::msg::HandCmd>("/dex3/left/cmd", 10);
-    right_hand_pub_ = this->create_publisher<unitree_hg::msg::HandCmd>("/dex3/right/cmd", 10);
+    left_hand_pub_ = this->create_publisher<std_msgs::msg::Bool>("/dex3/left/command", 10);
+    right_hand_pub_ = this->create_publisher<std_msgs::msg::Bool>("/dex3/right/command", 10);
 
     traj_sub_ = this->create_subscription<trajectory_msgs::msg::JointTrajectory>(
       "/joint_trajectory_targets", 10,
       std::bind(&JointTrajectoryExecutor::trajectoryCallback, this, std::placeholders::_1));
 
     // Load URDF and parse joint limits
-    std::string urdf_param;
-    this->declare_parameter("robot_description", "");
-    this->get_parameter("robot_description", urdf_param);
-    if (!urdf_param.empty()) {
+    std::string urdf_xml;
+        auto client = this->create_client<rcl_interfaces::srv::GetParameters>("/robot_state_publisher/get_parameters");
+    while (!client->wait_for_service(std::chrono::seconds(1))) {
+      RCLCPP_INFO(this->get_logger(), "Waiting for /robot_state_publisher service...");
+    }
+    
+    auto request = std::make_shared<rcl_interfaces::srv::GetParameters::Request>();
+    request->names.push_back("robot_description");
+
+    auto future = client->async_send_request(request);
+    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), future) == rclcpp::FutureReturnCode::SUCCESS) {
+      auto response = future.get();
+      if (response->values.size() == 1 && response->values[0].type == rcl_interfaces::msg::ParameterType::PARAMETER_STRING) {
+        urdf_xml = response->values[0].string_value;
+      } else {
+        RCLCPP_FATAL(this->get_logger(), "robot_description not found in /robot_state_publisher");
+        rclcpp::shutdown();
+        return;
+      }
+    } else {
+      RCLCPP_FATAL(this->get_logger(), "Failed to connect to /robot_state_publisher/get_parameters service");
+      rclcpp::shutdown();
+      return;
+    }
+
+    if (!urdf_xml.empty()) {
       urdf::Model urdf_model;
-      if (urdf_model.initString(urdf_param)) {
+      if (urdf_model.initString(urdf_xml)) {
         for (const auto& joint_pair : urdf_model.joints_) {
           const auto& joint = joint_pair.second;
           if (joint->type != urdf::Joint::REVOLUTE && joint->type != urdf::Joint::PRISMATIC) continue;
@@ -104,7 +126,7 @@ private:
     }
 
     // Start with preparing the hand, open it fully
-    hand_cmd_pub->publish(std_msgs::msg::Bool{false}); // Open hand command
+    hand_cmd_pub->publish(false); // Open hand command
 
     RCLCPP_INFO(this->get_logger(), "Hand opened fully, starting trajectory execution");
 
@@ -147,7 +169,7 @@ private:
     rclcpp::sleep_for(2s);  // Wait for the last command to take effect
 
     // After executing the trajectory, close the hand
-    hand_cmd_pub->publish(std_msgs::msg::Bool{true}); // Close hand command
+    hand_cmd_pub->publish(true); // Close hand command
     RCLCPP_INFO(this->get_logger(), "Hand closed after trajectory execution");
 
     // Final command to stop arm control

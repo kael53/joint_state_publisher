@@ -17,7 +17,7 @@
 #include <ompl/base/ProblemDefinition.h>
 #include <ompl/geometric/SimpleSetup.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
-#include <std_msgs/msg/string.h>
+#include <std_msgs/msg/string.hpp>
 #include <geometric_shapes/shape_operations.h>
 #include <geometric_shapes/shapes.h>
 #include <fcl/geometry/bvh/BVH_model.h>
@@ -49,54 +49,49 @@ public:
         this->declare_parameter("selected_class_topic", "/selected_detection_class");
         this->declare_parameter("planner_type", "RRTConnect");
         this->declare_parameter("collision_skip_pairs", std::vector<std::string>{});
-        this->declare_parameter("log_level", "info");
 
         // Fetch robot_description from global parameter server
-        std::string urdf_str;
-        if (!this->get_parameter_or<std::string>("robot_description", urdf_str, std::string())) {
-            if (!this->get_node_parameters_interface()->has_parameter("robot_description")) {
-                auto param_client = std::make_shared<rclcpp::SyncParametersClient>(this, "");
-                if (param_client->has_parameter("robot_description")) {
-                    urdf_str = param_client->get_parameter<std::string>("robot_description");
-                }
-            }
-        }
-        if (urdf_str.empty()) {
+        std::string urdf_xml;
+    auto client = this->create_client<rcl_interfaces::srv::GetParameters>("/robot_state_publisher/get_parameters");
+    while (!client->wait_for_service(std::chrono::seconds(1))) {
+      RCLCPP_INFO(this->get_logger(), "Waiting for /robot_state_publisher service...");
+    }
+    
+    auto request = std::make_shared<rcl_interfaces::srv::GetParameters::Request>();
+    request->names.push_back("robot_description");
+
+    auto future = client->async_send_request(request);
+    if (rclcpp::spin_until_future_complete(this->get_node_base_interface(), future) == rclcpp::FutureReturnCode::SUCCESS) {
+      auto response = future.get();
+      if (response->values.size() == 1 && response->values[0].type == rcl_interfaces::msg::ParameterType::PARAMETER_STRING) {
+        urdf_xml = response->values[0].string_value;
+      } else {
+        RCLCPP_FATAL(this->get_logger(), "robot_description not found in /robot_state_publisher");
+        rclcpp::shutdown();
+        return;
+      }
+    } else {
+      RCLCPP_FATAL(this->get_logger(), "Failed to connect to /robot_state_publisher/get_parameters service");
+      rclcpp::shutdown();
+      return;
+    }
+        if (urdf_xml.empty()) {
             RCLCPP_FATAL(this->get_logger(), "robot_description parameter is missing or empty. Cannot continue.");
             rclcpp::shutdown();
             return;
         }
 
-        double time_step;
-        this->get_parameter("trajectory_time_step", time_step);
-        double planning_timeout;
-        this->get_parameter("planning_timeout", planning_timeout);
-        std::string base_link, right_tip, left_tip;
-        this->get_parameter("base_link", base_link);
-        this->get_parameter("right_tip", right_tip);
-        this->get_parameter("left_tip", left_tip);
-        std::string detection_topic, selected_class_topic;
-        this->get_parameter("detection_topic", detection_topic);
-        this->get_parameter("selected_class_topic", selected_class_topic);
-        std::string planner_type;
-        this->get_parameter("planner_type", planner_type);
-        std::vector<std::string> collision_skip_pairs;
-        this->get_parameter("collision_skip_pairs", collision_skip_pairs);
-        std::string log_level;
-        this->get_parameter("log_level", log_level);
+        this->get_parameter("trajectory_time_step", time_step_);
+        this->get_parameter("planning_timeout", planning_timeout_);
+        this->get_parameter("base_link", base_link_);
+        this->get_parameter("right_tip", right_tip_);
+        this->get_parameter("left_tip", left_tip_);
+        this->get_parameter("detection_topic", detection_topic_);
+        this->get_parameter("selected_class_topic", selected_class_topic_);
+        this->get_parameter("planner_type", planner_type_);
+        this->get_parameter("collision_skip_pairs", collision_skip_pairs_);
 
-        // Set logging level
-        if (log_level == "debug") {
-            rcutils_logging_set_logger_level(this->get_logger().get_name(), RCUTILS_LOG_SEVERITY_DEBUG);
-        } else if (log_level == "warn") {
-            rcutils_logging_set_logger_level(this->get_logger().get_name(), RCUTILS_LOG_SEVERITY_WARN);
-        } else if (log_level == "error") {
-            rcutils_logging_set_logger_level(this->get_logger().get_name(), RCUTILS_LOG_SEVERITY_ERROR);
-        } else {
-            rcutils_logging_set_logger_level(this->get_logger().get_name(), RCUTILS_LOG_SEVERITY_INFO);
-        }
-
-        if (!urdf_model.initString(urdf_str)) {
+        if (!urdf_model.initString(urdf_xml)) {
             RCLCPP_FATAL(this->get_logger(), "Failed to parse URDF");
             rclcpp::shutdown();
             return;
@@ -108,16 +103,16 @@ public:
             return;
         }
 
-        ik_right = std::make_shared<TRAC_IK::TRAC_IK>(base_link, right_tip, urdf_str);
-        ik_left = std::make_shared<TRAC_IK::TRAC_IK>(base_link, left_tip, urdf_str);
+        ik_right = std::make_shared<TRAC_IK::TRAC_IK>(base_link_, right_tip_, urdf_xml);
+        ik_left = std::make_shared<TRAC_IK::TRAC_IK>(base_link_, left_tip_, urdf_xml);
 
-        if (!kdl_tree.getChain(base_link, right_tip, kdl_chain_right)) {
+        if (!kdl_tree.getChain(base_link_, right_tip_, kdl_chain_right)) {
             RCLCPP_FATAL(this->get_logger(), "Failed to extract KDL chain for right arm");
             rclcpp::shutdown();
             return;
         }
 
-        if (!kdl_tree.getChain(base_link, left_tip, kdl_chain_left)) {
+        if (!kdl_tree.getChain(base_link_, left_tip_, kdl_chain_left)) {
             RCLCPP_FATAL(this->get_logger(), "Failed to extract KDL chain for left arm");
             rclcpp::shutdown();
             return;
@@ -129,9 +124,9 @@ public:
         buildCollisionObjects();
 
         detection_sub_ = this->create_subscription<vision_msgs::msg::Detection3DArray>(
-            detection_topic, 10, std::bind(&IKFCLPlannerNode::detectionCallback, this, _1));
+            detection_topic_, 10, std::bind(&IKFCLPlannerNode::detectionCallback, this, _1));
         selected_class_sub_ = this->create_subscription<std_msgs::msg::String>(
-            selected_class_topic, 10, std::bind(&IKFCLPlannerNode::selectedClassCallback, this, _1));
+            selected_class_topic_, 10, std::bind(&IKFCLPlannerNode::selectedClassCallback, this, _1));
         traj_pub_ = this->create_publisher<trajectory_msgs::msg::JointTrajectory>("/joint_trajectory_targets", 10);
         joint_state_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
             "/joint_states", 10, std::bind(&IKFCLPlannerNode::jointStateCallback, this, _1));
@@ -171,6 +166,26 @@ private:
     // Add joint_limits_ as a member variable
     std::map<std::string, std::pair<double, double>> joint_limits_;
 
+    // Map from class name (string) to int64 id
+    std::map<std::string, int64_t> class_name_to_id_ = {
+        {"cup", 1},
+        {"bottle", 2},
+        {"can", 3},
+        // Add more mappings as needed
+    };
+
+    // Parameters
+    double time_step_ = 0.05;
+    double planning_timeout_ = 1.0;
+    std::string base_link_ = "pelvis";
+    std::string right_tip_ = "right_hand_palm_link";
+    std::string left_tip_ = "left_hand_palm_link";
+    std::string detection_topic_ = "/detections";
+    std::string selected_class_topic_ = "/selected_detection_class";
+    std::string planner_type_ = "RRTConnect";
+    std::vector<std::string> collision_skip_pairs_;
+    std::string log_level_ = "info";
+
     void buildCollisionObjects()
     {
         for (const auto& link_pair : urdf_model.links_) {
@@ -186,8 +201,20 @@ private:
                 urdf::Mesh* mesh = dynamic_cast<urdf::Mesh*>(link->collision->geometry.get());
                 if (!mesh) continue;
                 // Load mesh using geometric_shapes
-                shapes::Mesh* shape_mesh = shapes::createMeshFromResource(mesh->filename, mesh->scale);
-                if (!shape_mesh) continue;
+                shapes::Shape* shape = shapes::createMeshFromResource(mesh->filename);
+                shapes::Mesh* shape_mesh = dynamic_cast<shapes::Mesh*>(shape);
+                if (!shape_mesh) {
+                    delete shape;
+                    continue;
+                }
+                // Apply scale manually if needed
+                if (mesh->scale.x != 1.0 || mesh->scale.y != 1.0 || mesh->scale.z != 1.0) {
+                    for (unsigned int i = 0; i < shape_mesh->vertex_count; ++i) {
+                        shape_mesh->vertices[3 * i + 0] *= mesh->scale.x;
+                        shape_mesh->vertices[3 * i + 1] *= mesh->scale.y;
+                        shape_mesh->vertices[3 * i + 2] *= mesh->scale.z;
+                    }
+                }
                 // Convert to FCL BVHModel
                 auto bvh = std::make_shared<fcl::BVHModel<fcl::OBBRSSd>>();
                 std::vector<fcl::Vector3d> points;
@@ -236,9 +263,13 @@ private:
 
     void tryPlanForSelectedClass() {
         if (!selected_class_ || !last_detections_) return;
+        // Map selected_class_ string to int64 id
+        //auto id_it = class_name_to_id_.find(*selected_class_);
+        //if (id_it == class_name_to_id_.end()) return;
+        //int64_t selected_id = id_it->second;
         for (const auto& detection : last_detections_->detections) {
             if (detection.results.empty()) continue;
-            if (detection.results[0].hypothesis.class_id == *selected_class_) {
+            if (detection.results[0].id == selected_class_) {
                 geometry_msgs::msg::Pose pose = detection.bbox.center;
                 bool use_right = pose.position.y < 0.0;
                 // Dynamically generate planning_joints from KDL chain
@@ -282,7 +313,7 @@ private:
                 // OMPL bounds: use URDF joint limits if available, else fallback to [-3.14, 3.14]
                 auto space = std::make_shared<ob::RealVectorStateSpace>(planning_joints.size());
                 ob::RealVectorBounds bounds(planning_joints.size());
-                for (int i = 0; i < planning_joints.size(); ++i) {
+                for (size_t i = 0; i < planning_joints.size(); ++i) {
                     auto lim_it = joint_limits_.find(planning_joints[i]);
                     if (lim_it != joint_limits_.end()) {
                         bounds.setLow(i, lim_it->second.first);
@@ -296,28 +327,28 @@ private:
 
                 auto ss = std::make_shared<og::SimpleSetup>(space);
 
-                ss->setStateValidityChecker([this, use_right, planning_joints, &collision_skip_pairs](const ob::State* state) {
+                ss->setStateValidityChecker([this, use_right, planning_joints](const ob::State* state) {
                     const double* values = state->as<ob::RealVectorStateSpace::StateType>()->values;
                     KDL::JntArray joints(planning_joints.size());
-                    for (int i = 0; i < planning_joints.size(); ++i) joints(i) = values[i];
+                    for (size_t i = 0; i < planning_joints.size(); ++i) joints(i) = values[i];
                     // Optionally skip collision pairs
-                    return !isInCollision(joints, use_right, collision_skip_pairs);
+                    return !isInCollision(joints, use_right, this->collision_skip_pairs_);
                 });
 
                 ob::ScopedState<> start(space), goal_state(space);
-                for (int i = 0; i < planning_joints.size(); ++i) start[i] = planning_positions[i];
-                for (int i = 0; i < planning_joints.size(); ++i) goal_state[i] = goal(i);
+                for (size_t i = 0; i < planning_joints.size(); ++i) start[i] = planning_positions[i];
+                for (size_t i = 0; i < planning_joints.size(); ++i) goal_state[i] = goal(i);
 
                 ss->setStartAndGoalStates(start, goal_state);
                 // Planner type parameterization
-                if (planner_type == "RRTConnect") {
+                if (planner_type_ == "RRTConnect") {
                     ss->setPlanner(std::make_shared<og::RRTConnect>(ss->getSpaceInformation()));
                 } else {
-                    RCLCPP_WARN(this->get_logger(), "Unknown planner_type '%s', defaulting to RRTConnect", planner_type.c_str());
+                    RCLCPP_WARN(this->get_logger(), "Unknown planner_type '%s', defaulting to RRTConnect", planner_type_.c_str());
                     ss->setPlanner(std::make_shared<og::RRTConnect>(ss->getSpaceInformation()));
                 }
 
-                if (ss->solve(planning_timeout)) {
+                if (ss->solve(planning_timeout_)) {
                     auto path = ss->getSolutionPath();
                     path.interpolate();
                     const auto& states = path.getStates();
@@ -328,10 +359,10 @@ private:
                     for (size_t idx = 0; idx < states.size(); ++idx) {
                         const auto& state = states[idx];
                         trajectory_msgs::msg::JointTrajectoryPoint point;
-                        for (int i = 0; i < planning_joints.size(); ++i) {
+                        for (size_t i = 0; i < planning_joints.size(); ++i) {
                             point.positions.push_back(state->as<ob::RealVectorStateSpace::StateType>()->values[i]);
                         }
-                        point.time_from_start = rclcpp::Duration::from_seconds(time_step * (idx + 1));
+                        point.time_from_start = rclcpp::Duration::from_seconds(time_step_ * (idx + 1));
                         traj_msg.points.push_back(point);
                     }
 
@@ -360,7 +391,7 @@ private:
         auto& kdl_chain = use_right ? kdl_chain_right : kdl_chain_left;
         std::map<std::string, KDL::Frame> segment_frames;
         KDL::Frame out;
-        for (unsigned int i = 0; i < kdl_chain.getNrOfSegments(); ++i) {
+        for (size_t i = 0; i < kdl_chain.getNrOfSegments(); ++i) {
             if (fk_solver->JntToCart(joints, out, i + 1) >= 0) {
                 const auto& seg_name = kdl_chain.getSegment(i).getName();
                 segment_frames[seg_name] = out;
