@@ -173,10 +173,11 @@ private:
         hand_cmd.motor_cmd[i].kp = 1.5f;
         hand_cmd.motor_cmd[i].kd = 0.1f;
         hand_cmd.motor_cmd[i].tau = 0.f;
+        hand_cmd.motor_cmd[i].reserve[0] = 0x00; // Reserved byte, set to 0
 
         RCLCPP_INFO(this->get_logger(), "Setting hand joint %s to position %f", joint_name.c_str(), target_position);
       }
-      hand_cmd.reserve[0] = 0x00; // Reserved byte, set to 0
+
       // Publish the hand command to open it fully
       hand_cmd_pub_->publish(hand_cmd);
     } else {
