@@ -192,7 +192,8 @@ private:
     // Aggregate tactile sensor values for thumb, index, middle, and palm, using only valid values and scaling
     float thumb_sum = 0.0f, index_sum = 0.0f, middle_sum = 0.0f, palm_sum = 0.0f;
     size_t thumb_count = 0, index_count = 0, middle_count = 0, palm_count = 0;
-    RCLCPP_INFO(this->get_logger(), "Processing tactile sensor data for hand state feedback size %zu", msg->press_sensor_state.size());
+    msg->press_sensor_state.resize(9); // Ensure we have 9 sensors as expected
+    //RCLCPP_INFO(this->get_logger(), "Processing tactile sensor data for hand state feedback size %zu", msg->press_sensor_state.size());
     for (const auto& press : msg->press_sensor_state) {
       // Thumb: indices 0, 1
       for (size_t idx : {0, 1}) {
