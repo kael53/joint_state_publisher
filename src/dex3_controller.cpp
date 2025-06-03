@@ -148,7 +148,7 @@ private:
         RIS_Mode_t ris_mode;
         ris_mode.id = i; // Set id
         ris_mode.status = 0x01;  // Set status to 0x01 (FOC mode)
-        ris_mode.timeout = 0x01; // Set timeout to 0x01 (timeout)
+        ris_mode.timeout = 0x00; // Set timeout to 0x00 (no timeout)
     
         uint8_t mode = 0;
         mode |= (ris_mode.id & 0x0F); // Get lower 4 bits of id
