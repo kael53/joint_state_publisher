@@ -22,6 +22,7 @@
 #include <geometric_shapes/shapes.h>
 #include <fcl/geometry/bvh/BVH_model.h>
 #include <resource_retriever/retriever.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 #include <geometry_msgs/msg/pose.h>
 #include <map>
@@ -220,7 +221,6 @@ private:
                 std::vector<fcl::Vector3d> points;
                 for (unsigned int i = 0; i < shape_mesh->vertex_count; ++i) {
                     points.emplace_back(
-                        shape_mesh->vertices[3 * i + 0],
                         shape_mesh->vertices[3 * i + 1],
                         shape_mesh->vertices[3 * i + 2]);
                 }
