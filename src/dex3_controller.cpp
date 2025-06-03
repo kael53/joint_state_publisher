@@ -130,9 +130,9 @@ public:
 
     RCLCPP_INFO(this->get_logger(), "Dex3Controller started. Subscribing to %s, publishing to %s, feedback from %s", input_topic.c_str(), output_topic.c_str(), state_topic.c_str());
 
-    // Timer for periodic closed-loop grasping (1 Hz)
+    // Timer for periodic closed-loop grasping (20 Hz)
     closed_loop_timer_ = this->create_wall_timer(
-      1000ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
+      50ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
   }
 private:
   void handCmdCallback(const std_msgs::msg::Bool::SharedPtr msg) {
@@ -163,7 +163,7 @@ private:
         auto lim_it = joint_limits_.find(joint_name);
         if (lim_it != joint_limits_.end()) {
           const auto& lim = lim_it->second;
-          if (joint_name.find("thumb_0") != std::string::npos) {
+          if (joint_name.find("thumb_") != std::string::npos) {
             // Set thumb_0 to the middle of its range
             target_position = 0.5f * (lim.lower + lim.upper);
           } else {
@@ -197,8 +197,6 @@ private:
     // Aggregate tactile sensor values for thumb, index, middle, and palm, using only valid values and scaling
     float thumb_sum = 0.0f, index_sum = 0.0f, middle_sum = 0.0f, palm_sum = 0.0f;
     size_t thumb_count = 0, index_count = 0, middle_count = 0, palm_count = 0;
-    msg->press_sensor_state.resize(9); // Ensure we have 9 sensors as expected
-    //RCLCPP_INFO(this->get_logger(), "Processing tactile sensor data for hand state feedback size %zu", msg->press_sensor_state.size());
     for (const auto& press : msg->press_sensor_state) {
       // Thumb: indices 0, 1
       for (size_t idx : {0, 1}) {
