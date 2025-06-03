@@ -66,8 +66,14 @@ public:
     // Load URDF from /robot_description parameter and parse joint limits
     std::string urdf_xml;
     auto client = this->create_client<rcl_interfaces::srv::GetParameters>("/robot_state_publisher/get_parameters");
-    while (!client->wait_for_service(std::chrono::seconds(1))) {
-      RCLCPP_INFO(this->get_logger(), "Waiting for /robot_state_publisher service...");
+    int wait_attempts = 0;
+    while (!client->wait_for_service(std::chrono::milliseconds(200))) {
+      if (++wait_attempts > 25) { // Wait up to 5 seconds, then give up
+        RCLCPP_ERROR(this->get_logger(), "Timeout waiting for /robot_state_publisher service. Node will exit.");
+        rclcpp::shutdown();
+        return;
+      }
+      RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 2000, "Waiting for /robot_state_publisher service...");
     }
     
     auto request = std::make_shared<rcl_interfaces::srv::GetParameters::Request>();
@@ -166,11 +172,19 @@ private:
         auto lim_it = joint_limits_.find(joint_name);
         if (lim_it != joint_limits_.end()) {
           const auto& lim = lim_it->second;
-          if (joint_name.find("thumb_") != std::string::npos) {
-            // Set thumb_0 to the middle of its range
-            target_position = 0.5f * (lim.lower + lim.upper);
+          //left hand thumb_1 should be set to the lower limit
+          //right hand thumb_1 should be set to the upper limit
+          //for other fingers, its always 0
+          if (joint_name.find("thumb_1") != std::string::npos) {
+            if (side == "left") {
+              target_position = lim.lower;
+            } else if (side == "right") {
+              target_position = lim.upper;
+            } else {
+              target_position = 0.0f;
+            }
           } else {
-            target_position = lim.lower; // Use lower limit for opening the hand
+            target_position = 0.0f;
           }
         }
 
@@ -378,6 +392,49 @@ private:
     RCLCPP_INFO(this->get_logger(), "Hand joint calibration complete.");
   }
 
+  void rotateMotorsCalibration(bool isLeftHand) {
+    // This function will be called once at startup to sweep all motors through their range
+    RCLCPP_INFO(this->get_logger(), "Starting hand joint discovery sweep...");
+    const int MOTOR_MAX = hand_joint_names.size();
+    std::vector<float> maxLimits(MOTOR_MAX, 0.0f);
+    std::vector<float> minLimits(MOTOR_MAX, 0.0f);
+    for (int i = 0; i < MOTOR_MAX; ++i) {
+      const auto& joint_name = hand_joint_names[i];
+      auto lim_it = joint_limits_.find(joint_name);
+      if (lim_it != joint_limits_.end()) {
+        minLimits[i] = lim_it->second.lower;
+        maxLimits[i] = lim_it->second.upper;
+      }
+    }
+    int steps = 400; // Number of steps for a full sweep
+    for (int count = 0; count < steps; ++count) {
+      unitree_hg::msg::HandCmd msg;
+      msg.motor_cmd.resize(MOTOR_MAX);
+      for (int i = 0; i < MOTOR_MAX; ++i) {
+        RIS_Mode_t ris_mode;
+        ris_mode.id = i;
+        ris_mode.status = 0x01;
+        ris_mode.timeout = 0x00;
+        uint8_t mode = 0;
+        mode |= (ris_mode.id & 0x0F);
+        mode |= (ris_mode.status & 0x07) << 4;
+        mode |= (ris_mode.timeout & 0x01) << 7;
+        msg.motor_cmd[i].mode = mode;
+        msg.motor_cmd[i].tau = 0;
+        msg.motor_cmd[i].kp = 0.5f;
+        msg.motor_cmd[i].kd = 0.1f;
+        float range = maxLimits[i] - minLimits[i];
+        float mid = (maxLimits[i] + minLimits[i]) / 2.0f;
+        float amplitude = range / 2.0f;
+        float q = mid + amplitude * std::sin(count / static_cast<float>(steps) * M_PI * 2.0f);
+        msg.motor_cmd[i].q = q;
+      }
+      hand_cmd_pub_->publish(msg);
+      rclcpp::sleep_for(std::chrono::milliseconds(10));
+    }
+    RCLCPP_INFO(this->get_logger(), "Hand joint discovery sweep complete.");
+  }
+
   std::vector<std::string> hand_joint_names;
   bool closing_ = false;
   rclcpp::Publisher<unitree_hg::msg::HandCmd>::SharedPtr hand_cmd_pub_;
@@ -393,7 +450,31 @@ private:
 
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<Dex3Controller>());
+  auto node = std::make_shared<Dex3Controller>();
+  rclcpp::spin(node);
+  // On shutdown, send release command to hand
+  if (!node->hand_joint_names.empty() && node->hand_cmd_pub_) {
+    unitree_hg::msg::HandCmd release_cmd;
+    release_cmd.motor_cmd.resize(node->hand_joint_names.size());
+    for (size_t i = 0; i < node->hand_joint_names.size(); ++i) {
+      RIS_Mode_t ris_mode;
+      ris_mode.id = i;
+      ris_mode.status = 0x00;  // Lock mode
+      ris_mode.timeout = 0x01; // Enable timeout protection
+      uint8_t mode = 0;
+      mode |= (ris_mode.id & 0x0F);
+      mode |= (ris_mode.status & 0x07) << 4;
+      mode |= (ris_mode.timeout & 0x01) << 7;
+      release_cmd.motor_cmd[i].mode = mode;
+      release_cmd.motor_cmd[i].q = 0.f;
+      release_cmd.motor_cmd[i].dq = 0.f;
+      release_cmd.motor_cmd[i].kp = 0.f;
+      release_cmd.motor_cmd[i].kd = 0.f;
+      release_cmd.motor_cmd[i].tau = 0.f;
+    }
+    node->hand_cmd_pub_->publish(release_cmd);
+    rclcpp::sleep_for(std::chrono::milliseconds(100));
+  }
   rclcpp::shutdown();
   return 0;
 }
