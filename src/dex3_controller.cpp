@@ -274,15 +274,31 @@ private:
           auto lim_it = joint_limits_.find(joint_name);
           if (lim_it != joint_limits_.end()) {
             const auto& lim = lim_it->second;
+            // thumb_0 is always 0 for both hands
             if (joint_name.find("thumb_0") != std::string::npos) {
-              float mid = 0.5f * (lim.lower + lim.upper);
-              open_positions[i] = mid;
-              closed_positions[i] = mid;
-              interp_positions[i] = mid;
+              open_positions[i] = 0.0f;
+              closed_positions[i] = 0.0f;
+              interp_positions[i] = 0.0f;
+            } else if (joint_name.find("thumb_1") != std::string::npos || joint_name.find("thumb_2") != std::string::npos) {
+              if (side == "left") {
+                open_positions[i] = lim.lower;
+                closed_positions[i] = lim.upper;
+                interp_positions[i] = lim.lower;
+              } else if (side == "right") {
+                open_positions[i] = lim.upper;
+                closed_positions[i] = lim.lower;
+                interp_positions[i] = lim.upper;
+              }
             } else {
-              open_positions[i] = lim.lower;
-              closed_positions[i] = lim.upper;
-              interp_positions[i] = lim.lower;
+              if (side == "left") {
+                open_positions[i] = lim.upper;
+                closed_positions[i] = lim.lower;
+                interp_positions[i] = lim.upper;
+              } else if (side == "right") {
+                open_positions[i] = lim.lower;
+                closed_positions[i] = lim.upper;
+                interp_positions[i] = lim.lower;
+              }
             }
           }
         }
@@ -294,6 +310,7 @@ private:
       double thumb_val = thumb_tactile_;
       double finger_val = finger_tactile_;
       bool need_regrip = !(thumb_val > tactile_threshold && finger_val > tactile_threshold);
+      RCLCPP_INFO(this->get_logger(), "Thumb tactile: %f, Finger tactile: %f, Need regrip: %s", thumb_val, finger_val, need_regrip ? "true" : "false");
       if (need_regrip) {
         unitree_hg::msg::HandCmd interp_cmd;
         interp_cmd.motor_cmd.resize(hand_joint_names.size());
