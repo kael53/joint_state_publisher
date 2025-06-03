@@ -6,10 +6,16 @@
   <!-- [CAUTION] uncomment when convert to mujoco -->
   <!-- <link name="world"></link>
   <joint name="floating_base_joint" type="floating">
-    <parent link="world"/>
-    <child link="pelvis"/>
+    <parent link="map"/>
+    <child link="base_link"/>
   </joint> -->
 
+  <link name="base_link"/>
+  <joint name="base_to_pelvis" type="fixed">
+    <parent link="base_link"/>
+    <child link="pelvis"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
   <link name="pelvis">
     <inertial>
       <origin xyz="0 0 -0.07605" rpy="0 0 0"/>
