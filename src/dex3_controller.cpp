@@ -40,13 +40,12 @@ public:
   Dex3Controller() : Node("dex3_controller") {
     // Parameterize side, then input/output topics (defaulting to side-based names)
     this->declare_parameter("side", "left");
-    std::string side;
     this->get_parameter("side", side);
-    std::string default_input = "/dex3/" + side + "/command";
-    std::string output_topic = "/dex3/" + side + "/cmd"; // Fixed output topic
-    this->declare_parameter("input_topic", default_input);
-    std::string input_topic;
+    input_topic = "/dex3/" + side + "/command";
+    output_topic = "/dex3/" + side + "/cmd";
+    this->declare_parameter("input_topic", input_topic);
     this->get_parameter("input_topic", input_topic);
+    state_topic = "/dex3/" + side + "/state";
 
     rclcpp::QoS qos_profile(10);
     qos_profile.best_effort();
@@ -58,7 +57,6 @@ public:
       std::bind(&Dex3Controller::handCmdCallback, this, std::placeholders::_1));
 
     // Subscribe to feedback from the hand
-    std::string state_topic = "/dex3/" + side + "/state";
     hand_state_sub_ = this->create_subscription<unitree_hg::msg::HandState>(
       state_topic, 10,
       std::bind(&Dex3Controller::handStateCallback, this, std::placeholders::_1));
@@ -144,6 +142,11 @@ public:
       50ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
   }
 private:
+  std::string side;
+  std::string input_topic;
+  std::string output_topic;
+  std::string state_topic;
+
   void handCmdCallback(const std_msgs::msg::Bool::SharedPtr msg) {
     if (!msg->data) {
       RCLCPP_INFO(this->get_logger(), "Received open hand command");
