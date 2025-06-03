@@ -348,8 +348,8 @@ private:
           }
         }
         hand_cmd.motor_cmd[j].q = target;
-        hand_cmd.motor_cmd[j].dq = 1.0f; // Higher velocity for faster movement
-        hand_cmd.motor_cmd[j].kp = 4.0f; // Moderate kp
+        hand_cmd.motor_cmd[j].dq = 0.0f; // Set dq to 0 for position control
+        hand_cmd.motor_cmd[j].kp = 10.0f; // Moderate kp
         hand_cmd.motor_cmd[j].kd = 0.01f; // Very low kd
         hand_cmd.motor_cmd[j].tau = 0.f;
       }
