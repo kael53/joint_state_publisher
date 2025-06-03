@@ -348,9 +348,9 @@ private:
           }
         }
         hand_cmd.motor_cmd[j].q = target;
-        hand_cmd.motor_cmd[j].dq = 0.2f; // Set a small velocity
-        hand_cmd.motor_cmd[j].kp = 8.0f; // Increase kp for stronger movement
-        hand_cmd.motor_cmd[j].kd = 0.05f; // Lower kd for less damping
+        hand_cmd.motor_cmd[j].dq = 1.0f; // Higher velocity for faster movement
+        hand_cmd.motor_cmd[j].kp = 4.0f; // Moderate kp
+        hand_cmd.motor_cmd[j].kd = 0.01f; // Very low kd
         hand_cmd.motor_cmd[j].tau = 0.f;
       }
       RCLCPP_INFO(this->get_logger(), "Calibrating joint %s: moving to upper limit, others to lower", joint_name.c_str());
