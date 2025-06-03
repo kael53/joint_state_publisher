@@ -446,6 +446,33 @@ private:
   double finger_tactile_ = 0.0;
 
   rclcpp::TimerBase::SharedPtr closed_loop_timer_;
+
+  // Public method to release the hand safely on shutdown
+public:
+  void release_hand() {
+    if (!hand_joint_names.empty() && hand_cmd_pub_) {
+      unitree_hg::msg::HandCmd release_cmd;
+      release_cmd.motor_cmd.resize(hand_joint_names.size());
+      for (size_t i = 0; i < hand_joint_names.size(); ++i) {
+        RIS_Mode_t ris_mode;
+        ris_mode.id = i;
+        ris_mode.status = 0x00;  // Lock mode
+        ris_mode.timeout = 0x01; // Enable timeout protection
+        uint8_t mode = 0;
+        mode |= (ris_mode.id & 0x0F);
+        mode |= (ris_mode.status & 0x07) << 4;
+        mode |= (ris_mode.timeout & 0x01) << 7;
+        release_cmd.motor_cmd[i].mode = mode;
+        release_cmd.motor_cmd[i].q = 0.f;
+        release_cmd.motor_cmd[i].dq = 0.f;
+        release_cmd.motor_cmd[i].kp = 0.f;
+        release_cmd.motor_cmd[i].kd = 0.f;
+        release_cmd.motor_cmd[i].tau = 0.f;
+      }
+      hand_cmd_pub_->publish(release_cmd);
+      rclcpp::sleep_for(std::chrono::milliseconds(100));
+    }
+  }
 };
 
 int main(int argc, char **argv) {
@@ -453,28 +480,7 @@ int main(int argc, char **argv) {
   auto node = std::make_shared<Dex3Controller>();
   rclcpp::spin(node);
   // On shutdown, send release command to hand
-  if (!node->hand_joint_names.empty() && node->hand_cmd_pub_) {
-    unitree_hg::msg::HandCmd release_cmd;
-    release_cmd.motor_cmd.resize(node->hand_joint_names.size());
-    for (size_t i = 0; i < node->hand_joint_names.size(); ++i) {
-      RIS_Mode_t ris_mode;
-      ris_mode.id = i;
-      ris_mode.status = 0x00;  // Lock mode
-      ris_mode.timeout = 0x01; // Enable timeout protection
-      uint8_t mode = 0;
-      mode |= (ris_mode.id & 0x0F);
-      mode |= (ris_mode.status & 0x07) << 4;
-      mode |= (ris_mode.timeout & 0x01) << 7;
-      release_cmd.motor_cmd[i].mode = mode;
-      release_cmd.motor_cmd[i].q = 0.f;
-      release_cmd.motor_cmd[i].dq = 0.f;
-      release_cmd.motor_cmd[i].kp = 0.f;
-      release_cmd.motor_cmd[i].kd = 0.f;
-      release_cmd.motor_cmd[i].tau = 0.f;
-    }
-    node->hand_cmd_pub_->publish(release_cmd);
-    rclcpp::sleep_for(std::chrono::milliseconds(100));
-  }
+  node->release_hand();
   rclcpp::shutdown();
   return 0;
 }
