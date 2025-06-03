@@ -135,7 +135,7 @@ public:
     RCLCPP_INFO(this->get_logger(), "Dex3Controller started. Subscribing to %s, publishing to %s, feedback from %s", input_topic.c_str(), output_topic.c_str(), state_topic.c_str());
 
     // Perform calibration on startup
-    calibrate_hand_joints();
+    rotateMotorsCalibration();
 
     // Timer for periodic closed-loop grasping (20 Hz)
     closed_loop_timer_ = this->create_wall_timer(
@@ -295,7 +295,6 @@ private:
       double finger_val = finger_tactile_;
       bool need_regrip = !(thumb_val > tactile_threshold && finger_val > tactile_threshold);
       if (need_regrip) {
-        bool all_reached = true;
         unitree_hg::msg::HandCmd interp_cmd;
         interp_cmd.motor_cmd.resize(hand_joint_names.size());
         for (size_t i = 0; i < hand_joint_names.size(); ++i) {
@@ -317,7 +316,6 @@ private:
             float step = step_fraction * (closed_positions[i] - open_positions[i]);
             if (std::abs(diff) > std::abs(step)) {
               interp_positions[i] += step;
-              all_reached = false;
             } else {
               interp_positions[i] = closed_positions[i];
             }
@@ -333,69 +331,7 @@ private:
     }
   }
 
-  void calibrate_hand_joints() {
-    RCLCPP_INFO(this->get_logger(), "Starting hand joint calibration...");
-    if (hand_joint_names.empty()) {
-      RCLCPP_WARN(this->get_logger(), "No hand joints found for calibration.");
-      return;
-    }
-    unitree_hg::msg::HandCmd hand_cmd;
-    hand_cmd.motor_cmd.resize(hand_joint_names.size());
-    for (size_t i = 0; i < hand_joint_names.size(); ++i) {
-      auto joint_name = hand_joint_names[i];
-      RIS_Mode_t ris_mode;
-      ris_mode.id = i;
-      ris_mode.status = 0x01;  // FOC mode
-      ris_mode.timeout = 0x00;
-      uint8_t mode = 0;
-      mode |= (ris_mode.id & 0x0F);
-      mode |= (ris_mode.status & 0x07) << 4;
-      mode |= (ris_mode.timeout & 0x01) << 7;
-      hand_cmd.motor_cmd[i].mode = mode;
-      // Move only the current joint to its upper limit, others to lower
-      for (size_t j = 0; j < hand_joint_names.size(); ++j) {
-        float target = 0.0f;
-        auto lim_it = joint_limits_.find(hand_joint_names[j]);
-        if (lim_it != joint_limits_.end()) {
-          const auto& lim = lim_it->second;
-          if (j == i) {
-            target = lim.upper;
-          } else {
-            target = lim.lower;
-          }
-        }
-        hand_cmd.motor_cmd[j].q = target;
-        hand_cmd.motor_cmd[j].dq = 0.f;
-        hand_cmd.motor_cmd[j].kp = 1.5f;
-        hand_cmd.motor_cmd[j].kd = 0.1f;
-        hand_cmd.motor_cmd[j].tau = 0.f;
-      }
-      RCLCPP_INFO(this->get_logger(), "Calibrating joint %s: moving to upper limit, others to lower", joint_name.c_str());
-      hand_cmd_pub_->publish(hand_cmd);
-      rclcpp::sleep_for(std::chrono::seconds(2)); // Wait longer for joint to move
-    }
-    // After calibration, open all joints
-    for (size_t i = 0; i < hand_joint_names.size(); ++i) {
-      RIS_Mode_t ris_mode;
-      ris_mode.id = i;
-      ris_mode.status = 0x00;  // FOC mode
-      ris_mode.timeout = 0x01; // Enable timeout protection
-      uint8_t mode = 0;
-      mode |= (ris_mode.id & 0x0F);
-      mode |= (ris_mode.status & 0x07) << 4;
-      mode |= (ris_mode.timeout & 0x01) << 7;
-      hand_cmd.motor_cmd[i].mode = mode;
-      hand_cmd.motor_cmd[i].q = 0.f;
-      hand_cmd.motor_cmd[i].dq = 0.f;
-      hand_cmd.motor_cmd[i].kp = 0.f;
-      hand_cmd.motor_cmd[i].kd = 0.f;
-      hand_cmd.motor_cmd[i].tau = 0.f;
-    }
-    hand_cmd_pub_->publish(hand_cmd);
-    RCLCPP_INFO(this->get_logger(), "Hand joint calibration complete.");
-  }
-
-  void rotateMotorsCalibration(bool isLeftHand) {
+  void rotateMotorsCalibration() {
     // This function will be called once at startup to sweep all motors through their range
     RCLCPP_INFO(this->get_logger(), "Starting hand joint discovery sweep...");
     const int MOTOR_MAX = hand_joint_names.size();
