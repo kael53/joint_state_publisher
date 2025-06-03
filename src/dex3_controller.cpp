@@ -348,14 +348,14 @@ private:
           }
         }
         hand_cmd.motor_cmd[j].q = target;
-        hand_cmd.motor_cmd[j].dq = 0.f;
-        hand_cmd.motor_cmd[j].kp = 1.5f;
-        hand_cmd.motor_cmd[j].kd = 0.1f;
+        hand_cmd.motor_cmd[j].dq = 0.2f; // Set a small velocity
+        hand_cmd.motor_cmd[j].kp = 8.0f; // Increase kp for stronger movement
+        hand_cmd.motor_cmd[j].kd = 0.05f; // Lower kd for less damping
         hand_cmd.motor_cmd[j].tau = 0.f;
       }
       RCLCPP_INFO(this->get_logger(), "Calibrating joint %s: moving to upper limit, others to lower", joint_name.c_str());
       hand_cmd_pub_->publish(hand_cmd);
-      rclcpp::sleep_for(std::chrono::seconds(1)); // Wait for joint to move
+      rclcpp::sleep_for(std::chrono::seconds(2)); // Wait longer for joint to move
     }
     // After calibration, open all joints
     for (size_t i = 0; i < hand_joint_names.size(); ++i) {
