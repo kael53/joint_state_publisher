@@ -355,10 +355,19 @@ private:
       }
       RCLCPP_INFO(this->get_logger(), "Calibrating joint %s: moving to upper limit, others to lower", joint_name.c_str());
       hand_cmd_pub_->publish(hand_cmd);
-      rclcpp::sleep_for(std::chrono::milliseconds(700)); // Wait for joint to move
+      rclcpp::sleep_for(std::chrono::seconds(1)); // Wait for joint to move
     }
     // After calibration, open all joints
     for (size_t i = 0; i < hand_joint_names.size(); ++i) {
+      RIS_Mode_t ris_mode;
+      ris_mode.id = i;
+      ris_mode.status = 0x00;  // FOC mode
+      ris_mode.timeout = 0x01; // Enable timeout protection
+      uint8_t mode = 0;
+      mode |= (ris_mode.id & 0x0F);
+      mode |= (ris_mode.status & 0x07) << 4;
+      mode |= (ris_mode.timeout & 0x01) << 7;
+      hand_cmd.motor_cmd[i].mode = mode;
       auto lim_it = joint_limits_.find(hand_joint_names[i]);
       if (lim_it != joint_limits_.end()) {
         hand_cmd.motor_cmd[i].q = lim_it->second.lower;
