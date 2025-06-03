@@ -130,9 +130,9 @@ public:
 
     RCLCPP_INFO(this->get_logger(), "Dex3Controller started. Subscribing to %s, publishing to %s, feedback from %s", input_topic.c_str(), output_topic.c_str(), state_topic.c_str());
 
-    // Timer for periodic closed-loop grasping (20 Hz)
+    // Timer for periodic closed-loop grasping (1 Hz)
     closed_loop_timer_ = this->create_wall_timer(
-      50ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
+      1000ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
   }
 private:
   void handCmdCallback(const std_msgs::msg::Bool::SharedPtr msg) {
@@ -182,6 +182,7 @@ private:
 
       // Publish the hand command to open it fully
       hand_cmd_pub_->publish(hand_cmd);
+      rclcpp::sleep_for(1s);  // Wait for the last command to take effect
     } else {
       RCLCPP_INFO(this->get_logger(), "Received close hand command");
       if (!closing_) {
