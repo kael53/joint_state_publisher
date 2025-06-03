@@ -46,6 +46,8 @@ public:
     this->declare_parameter("input_topic", input_topic);
     this->get_parameter("input_topic", input_topic);
     state_topic = "/dex3/" + side + "/state";
+    this->declare_parameter("tactile_threshold", tactile_threshold_);
+    this->get_parameter("tactile_threshold", tactile_threshold_);
 
     rclcpp::QoS qos_profile(10);
     qos_profile.best_effort();
@@ -146,6 +148,7 @@ private:
   std::string input_topic;
   std::string output_topic;
   std::string state_topic;
+  double tactile_threshold_ = 1000.0; // 1000W => 8000Pa == 80 g/cm^2
 
   void handCmdCallback(const std_msgs::msg::Bool::SharedPtr msg) {
     if (!msg->data) {
@@ -306,10 +309,9 @@ private:
       }
       // Feedback-driven grasp maintenance
       const float step_fraction = 0.05f;
-      const double tactile_threshold = 0.5;
       double thumb_val = thumb_tactile_;
       double finger_val = finger_tactile_;
-      bool need_regrip = !(thumb_val > tactile_threshold && finger_val > tactile_threshold);
+      bool need_regrip = !(thumb_val > tactile_threshold_ && finger_val > tactile_threshold_);
       RCLCPP_INFO(this->get_logger(), "Thumb tactile: %f, Finger tactile: %f, Need regrip: %s", thumb_val, finger_val, need_regrip ? "true" : "false");
       if (need_regrip) {
         unitree_hg::msg::HandCmd interp_cmd;
