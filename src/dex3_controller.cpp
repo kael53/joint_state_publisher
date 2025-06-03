@@ -368,10 +368,11 @@ private:
       mode |= (ris_mode.status & 0x07) << 4;
       mode |= (ris_mode.timeout & 0x01) << 7;
       hand_cmd.motor_cmd[i].mode = mode;
-      auto lim_it = joint_limits_.find(hand_joint_names[i]);
-      if (lim_it != joint_limits_.end()) {
-        hand_cmd.motor_cmd[i].q = lim_it->second.lower;
-      }
+      hand_cmd.motor_cmd[j].q = 0.f;
+      hand_cmd.motor_cmd[j].dq = 0.f;
+      hand_cmd.motor_cmd[j].kp = 0.f;
+      hand_cmd.motor_cmd[j].kd = 0.f;
+      hand_cmd.motor_cmd[j].tau = 0.f;
     }
     hand_cmd_pub_->publish(hand_cmd);
     RCLCPP_INFO(this->get_logger(), "Hand joint calibration complete.");
