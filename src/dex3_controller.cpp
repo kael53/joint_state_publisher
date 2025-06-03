@@ -48,7 +48,10 @@ public:
     std::string input_topic;
     this->get_parameter("input_topic", input_topic);
 
-    hand_cmd_pub_ = this->create_publisher<unitree_hg::msg::HandCmd>(output_topic, 10);
+    rclcpp::QoS qos_profile(10);
+    qos_profile.best_effort();
+
+    hand_cmd_pub_ = this->create_publisher<unitree_hg::msg::HandCmd>(output_topic, qos_profile);
     // Subscribe to high-level commands (e.g., "open hand", "close hand")
     hand_cmd_sub_ = this->create_subscription<std_msgs::msg::Bool>(
       input_topic, 10,
@@ -173,7 +176,6 @@ private:
         hand_cmd.motor_cmd[i].kp = 1.5f;
         hand_cmd.motor_cmd[i].kd = 0.1f;
         hand_cmd.motor_cmd[i].tau = 0.f;
-        hand_cmd.motor_cmd[i].reserve = mode; // Reserved byte, set to 0
 
         RCLCPP_INFO(this->get_logger(), "Setting hand joint %s to position %f", joint_name.c_str(), target_position);
       }
