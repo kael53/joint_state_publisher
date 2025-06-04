@@ -278,16 +278,9 @@ private:
   }
 
   void closedLoopGrasping() {
-    static std::vector<float> open_positions, closed_positions, interp_positions;
+    static std::vector<float> open_positions, closed_positions;
     static bool initialized = false;
-    static bool last_closing = false;
     if (closing_) {
-      // If just started closing, initialize interp_positions to current joint state
-      if (!last_closing) {
-        interp_positions = current_positions_;
-        last_closing = true;
-        initialized = false; // re-initialize open/closed positions if needed
-      }
       // Initialize joint positions if not done
       if (!initialized) {
         size_t n = hand_joint_names.size();
@@ -328,46 +321,36 @@ private:
       double finger_val = finger_tactile_;
       bool need_regrip = !(thumb_val > tactile_threshold_ && finger_val > tactile_threshold_);
       RCLCPP_INFO(this->get_logger(), "Thumb tactile: %f, Finger tactile: %f, Need regrip: %s", thumb_val, finger_val, need_regrip ? "true" : "false");
-      if (need_regrip) {
+      if (need_regrip && current_positions_.size() == closed_positions.size()) {
         unitree_hg::msg::HandCmd interp_cmd;
         interp_cmd.motor_cmd.resize(hand_joint_names.size());
         for (size_t i = 0; i < hand_joint_names.size(); ++i) {
           const auto& joint_name = hand_joint_names[i];
-
           RIS_Mode_t ris_mode;
           ris_mode.id = i;
           ris_mode.status = 0x01;
           ris_mode.timeout = 0x00;
-
           uint8_t mode = 0;
           mode |= (ris_mode.id & 0x0F);
           mode |= (ris_mode.status & 0x07) << 4;
           mode |= (ris_mode.timeout & 0x01) << 7;
-
           interp_cmd.motor_cmd[i].mode = mode;
-
           float target = closed_positions[i];
-          float diff = target - interp_positions[i];
+          float diff = target - current_positions_[i];
           float step = step_fraction * diff;
-          if (std::abs(diff) > std::abs(step)) {
-            interp_positions[i] += step;
-          } else {
-            interp_positions[i] = target;
-          }
-
-          interp_cmd.motor_cmd[i].q = interp_positions[i];
+          float next = (std::abs(diff) > std::abs(step)) ? (current_positions_[i] + step) : target;
+          interp_cmd.motor_cmd[i].q = next;
           interp_cmd.motor_cmd[i].dq = 0.f;
           interp_cmd.motor_cmd[i].kp = 0.5f;
           interp_cmd.motor_cmd[i].kd = 0.1f;
           interp_cmd.motor_cmd[i].tau = 0.f;
-
-          RCLCPP_INFO(this->get_logger(), "Interpolating hand joint %s to position %f", joint_name.c_str(), interp_positions[i]);
+          RCLCPP_INFO(this->get_logger(), "Interpolating hand joint %s to position %f (current: %f, target: %f)", joint_name.c_str(), next, current_positions_[i], target);
         }
         hand_cmd_pub_->publish(interp_cmd);
-        rclcpp::sleep_for(std::chrono::milliseconds(10)); // Allow time for command to take effect
+        rclcpp::sleep_for(std::chrono::milliseconds(10));
       }
     } else {
-      last_closing = false;
+      initialized = false;
     }
   }
 
