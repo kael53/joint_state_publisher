@@ -267,47 +267,55 @@ private:
     thumb_tactile_ = thumb_avg;
     finger_tactile_ = finger_palm_avg;
     RCLCPP_DEBUG(this->get_logger(), "Tactile thumb avg: %f, finger/palm avg: %f", thumb_avg, finger_palm_avg);
+
+    // Update current_positions_ from feedback
+    current_positions_.resize(hand_joint_names.size(), 0.0f);
+    if (msg->motor_state.size() == hand_joint_names.size()) {
+      for (size_t i = 0; i < hand_joint_names.size(); ++i) {
+        current_positions_[i] = msg->motor_state[i].q;
+      }
+    }
   }
 
   void closedLoopGrasping() {
     static std::vector<float> open_positions, closed_positions, interp_positions;
     static bool initialized = false;
+    static bool last_closing = false;
     if (closing_) {
+      // If just started closing, initialize interp_positions to current joint state
+      if (!last_closing) {
+        interp_positions = current_positions_;
+        last_closing = true;
+        initialized = false; // re-initialize open/closed positions if needed
+      }
       // Initialize joint positions if not done
       if (!initialized) {
         size_t n = hand_joint_names.size();
         open_positions.resize(n, 0.0f);
         closed_positions.resize(n, 0.0f);
-        interp_positions.resize(n, 0.0f);
         for (size_t i = 0; i < n; ++i) {
           const auto& joint_name = hand_joint_names[i];
           auto lim_it = joint_limits_.find(joint_name);
           if (lim_it != joint_limits_.end()) {
             const auto& lim = lim_it->second;
-            // thumb_0 is always 0 for both hands
             if (joint_name.find("thumb_0") != std::string::npos) {
               open_positions[i] = 0.0f;
               closed_positions[i] = 0.0f;
-              interp_positions[i] = 0.0f;
             } else if (joint_name.find("thumb_1") != std::string::npos || joint_name.find("thumb_2") != std::string::npos) {
               if (side == "left") {
                 open_positions[i] = lim.lower;
                 closed_positions[i] = lim.upper;
-                interp_positions[i] = lim.lower;
               } else if (side == "right") {
                 open_positions[i] = lim.upper;
                 closed_positions[i] = lim.lower;
-                interp_positions[i] = lim.upper;
               }
             } else {
               if (side == "left") {
                 open_positions[i] = 0.f;
                 closed_positions[i] = lim.lower;
-                interp_positions[i] = lim.upper;
               } else if (side == "right") {
                 open_positions[i] = 0.f;
                 closed_positions[i] = lim.upper;
-                interp_positions[i] = lim.lower;
               }
             }
           }
@@ -335,12 +343,12 @@ private:
           mode |= (ris_mode.timeout & 0x01) << 7;
           interp_cmd.motor_cmd[i].mode = mode;
           float target = closed_positions[i];
-          float diff = closed_positions[i] - interp_positions[i];
-          float step = step_fraction * (closed_positions[i] - open_positions[i]);
+          float diff = target - interp_positions[i];
+          float step = step_fraction * (target - open_positions[i]);
           if (std::abs(diff) > std::abs(step)) {
             interp_positions[i] += step;
           } else {
-            interp_positions[i] = closed_positions[i];
+            interp_positions[i] = target;
           }
           interp_cmd.motor_cmd[i].q = interp_positions[i];
           interp_cmd.motor_cmd[i].dq = 0.0f;
@@ -350,6 +358,8 @@ private:
         }
         hand_cmd_pub_->publish(interp_cmd);
       }
+    } else {
+      last_closing = false;
     }
   }
 
@@ -411,6 +421,8 @@ private:
 
   rclcpp::TimerBase::SharedPtr calibration_timer_;
   rclcpp::TimerBase::SharedPtr closed_loop_timer_;
+
+  std::vector<float> current_positions_;
 
   // Public method to release the hand safely on shutdown
 public:
