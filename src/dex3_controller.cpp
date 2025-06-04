@@ -247,7 +247,7 @@ private:
         auto lim_it = joint_limits_.find(joint_name);
         if (lim_it != joint_limits_.end()) {
           const auto& lim = lim_it->second;
-          if (joint_name.find("thumb_1") != std::string::npos) {
+          if (joint_name.find("thumb_1") != std::string::npos || joint_name.find("thumb_2") != std::string::npos) {
             if (side == "left") {
               target_position = lim.upper;
             } else if (side == "right") {
