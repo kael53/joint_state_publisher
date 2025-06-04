@@ -148,9 +148,9 @@ public:
         }
     );
 
-    // Timer for periodic closed-loop grasping (100 Hz)
+    // Timer for periodic closed-loop grasping (20 Hz)
     closed_loop_timer_ = this->create_wall_timer(
-      10ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
+      50ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
   }
 private:
   std::string side;
@@ -333,15 +333,19 @@ private:
         interp_cmd.motor_cmd.resize(hand_joint_names.size());
         for (size_t i = 0; i < hand_joint_names.size(); ++i) {
           const auto& joint_name = hand_joint_names[i];
+
           RIS_Mode_t ris_mode;
           ris_mode.id = i;
           ris_mode.status = 0x01;
           ris_mode.timeout = 0x00;
+
           uint8_t mode = 0;
           mode |= (ris_mode.id & 0x0F);
           mode |= (ris_mode.status & 0x07) << 4;
           mode |= (ris_mode.timeout & 0x01) << 7;
+
           interp_cmd.motor_cmd[i].mode = mode;
+
           float target = closed_positions[i];
           float diff = target - interp_positions[i];
           float step = step_fraction * (target - open_positions[i]);
@@ -350,6 +354,7 @@ private:
           } else {
             interp_positions[i] = target;
           }
+
           interp_cmd.motor_cmd[i].q = interp_positions[i];
           interp_cmd.motor_cmd[i].dq = 0.0f;
           interp_cmd.motor_cmd[i].kp = 1.0f;
@@ -359,6 +364,7 @@ private:
           RCLCPP_INFO(this->get_logger(), "Interpolating hand joint %s to position %f", joint_name.c_str(), interp_positions[i]);
         }
         hand_cmd_pub_->publish(interp_cmd);
+        rclcpp::sleep_for(std::chrono::milliseconds(10)); // Allow time for command to take effect
       }
     } else {
       last_closing = false;
