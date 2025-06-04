@@ -149,8 +149,8 @@ public:
     );
 
     // Timer for periodic closed-loop grasping (10 Hz)
-    closed_loop_timer_ = this->create_wall_timer(
-      100ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
+    //closed_loop_timer_ = this->create_wall_timer(
+    //  100ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
   }
 private:
   std::string side;
@@ -223,6 +223,60 @@ private:
       RCLCPP_INFO(this->get_logger(), "Received close hand command");
       if (!closing_) {
         closing_ = true;
+
+              unitree_hg::msg::HandCmd hand_cmd;
+      hand_cmd.motor_cmd.resize(hand_joint_names.size()); // Resize to number of hand joints
+      for (size_t i = 0; i < hand_joint_names.size(); ++i) {
+        auto joint_name = hand_joint_names[i];
+
+        RIS_Mode_t ris_mode;
+        ris_mode.id = i; // Set id
+        ris_mode.status = 0x01;  // Set status to 0x01 (FOC mode)
+        ris_mode.timeout = 0x00; // Set timeout to 0x00 (no timeout)
+    
+        uint8_t mode = 0;
+        mode |= (ris_mode.id & 0x0F); // Get lower 4 bits of id
+        mode |= (ris_mode.status & 0x07) << 4; // Get upper 3 bits of status and shift left 4 bits
+        mode |= (ris_mode.timeout & 0x01) << 7; // Get upper 1 bit of timeout and shift left 7 bits
+
+        hand_cmd.motor_cmd[i].mode = mode; // Set the mode for the hand joint
+
+        float target_position = 0.0f; // Default target position for opening the hand
+
+        // Clamp using URDF joint limits if available
+        auto lim_it = joint_limits_.find(joint_name);
+        if (lim_it != joint_limits_.end()) {
+          const auto& lim = lim_it->second;
+          if (joint_name.find("thumb_1") != std::string::npos) {
+            if (side == "left") {
+              target_position = lim.upper;
+            } else if (side == "right") {
+              target_position = lim.lower;
+            }
+          } else if (joint_name.find("thumb_0") != std::string::npos) {
+            target_position = (lim.lower + lim.upper) / 2.0f;
+          } else {
+            if (side == "left") {
+              target_position = lim.lower;
+            } else if (side == "right") {
+              target_position = lim.upper;
+            }
+          }
+        }
+
+        hand_cmd.motor_cmd[i].q = target_position; // Open the hand fully (or thumb_0 to middle)
+        hand_cmd.motor_cmd[i].dq = 0.f; // No velocity command for opening
+        hand_cmd.motor_cmd[i].kp = 0.5f;
+        hand_cmd.motor_cmd[i].kd = 0.1f;
+        hand_cmd.motor_cmd[i].tau = 0.f;
+
+        RCLCPP_INFO(this->get_logger(), "Setting hand joint %s to position %f", joint_name.c_str(), target_position);
+      }
+
+      // Publish the hand command to open it fully
+      hand_cmd_pub_->publish(hand_cmd);
+      rclcpp::sleep_for(1s);  // Wait for the last command to take effect
+
         // No need to start a timer, main loop handles closing
       }
     }
