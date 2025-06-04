@@ -196,8 +196,14 @@ private:
             } else if (side == "right") {
               target_position = lim.upper;
             }
-          } else {
+          } else if (joint_name.find("thumb_0") != std::string::npos) {
             target_position = (lim.lower + lim.upper) / 2.0f;
+          } else {
+            if (side == "left") {
+              target_position = lim.upper;
+            } else if (side == "right") {
+              target_position = lim.lower;
+            }
           }
         }
 
