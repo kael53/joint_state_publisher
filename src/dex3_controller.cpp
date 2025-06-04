@@ -195,8 +195,6 @@ private:
               target_position = lim.lower;
             } else if (side == "right") {
               target_position = lim.upper;
-            } else {
-              target_position = 0.0f;
             }
           } else {
             target_position = 0.0f;
@@ -303,11 +301,11 @@ private:
               }
             } else {
               if (side == "left") {
-                open_positions[i] = lim.upper;
+                open_positions[i] = 0.f;
                 closed_positions[i] = lim.lower;
                 interp_positions[i] = lim.upper;
               } else if (side == "right") {
-                open_positions[i] = lim.lower;
+                open_positions[i] = 0.f;
                 closed_positions[i] = lim.upper;
                 interp_positions[i] = lim.lower;
               }
@@ -337,18 +335,14 @@ private:
           mode |= (ris_mode.timeout & 0x01) << 7;
           interp_cmd.motor_cmd[i].mode = mode;
           float target = closed_positions[i];
-          if (joint_name.find("thumb_0") != std::string::npos) {
-            interp_cmd.motor_cmd[i].q = target;
+          float diff = closed_positions[i] - interp_positions[i];
+          float step = step_fraction * (closed_positions[i] - open_positions[i]);
+          if (std::abs(diff) > std::abs(step)) {
+            interp_positions[i] += step;
           } else {
-            float diff = closed_positions[i] - interp_positions[i];
-            float step = step_fraction * (closed_positions[i] - open_positions[i]);
-            if (std::abs(diff) > std::abs(step)) {
-              interp_positions[i] += step;
-            } else {
-              interp_positions[i] = closed_positions[i];
-            }
-            interp_cmd.motor_cmd[i].q = interp_positions[i];
+            interp_positions[i] = closed_positions[i];
           }
+          interp_cmd.motor_cmd[i].q = interp_positions[i];
           interp_cmd.motor_cmd[i].dq = 0.0f;
           interp_cmd.motor_cmd[i].kp = 0.5f;
           interp_cmd.motor_cmd[i].kd = 0.1f;
