@@ -148,9 +148,9 @@ public:
         }
     );
 
-    // Timer for periodic closed-loop grasping (20 Hz)
+    // Timer for periodic closed-loop grasping (100 Hz)
     closed_loop_timer_ = this->create_wall_timer(
-      100ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
+      10ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
   }
 private:
   std::string side;
@@ -441,7 +441,7 @@ public:
         release_cmd.motor_cmd[i].tau = 0.f;
       }
       hand_cmd_pub_->publish(release_cmd);
-      rclcpp::sleep_for(std::chrono::milliseconds(100));
+      rclcpp::sleep_for(std::chrono::milliseconds(10));
     }
   }
 };
