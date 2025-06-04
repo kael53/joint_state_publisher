@@ -350,7 +350,7 @@ private:
 
   void rotateMotorsCalibration() {
     // This function will be called once at startup to sweep all motors through their range
-    RCLCPP_INFO(this->get_logger(), "Starting hand joint discovery sweep...");
+    RCLCPP_INFO(this->get_logger(), "Starting hand joint discovery sweep... %zu joints found", hand_joint_names.size());
     std::vector<float> maxLimits(hand_joint_names.size(), 0.0f);
     std::vector<float> minLimits(hand_joint_names.size(), 0.0f);
     for (size_t i = 0; i < hand_joint_names.size(); ++i) {
@@ -384,7 +384,7 @@ private:
         msg.motor_cmd[i].q = q;
       }
       hand_cmd_pub_->publish(msg);
-      rclcpp::sleep_for(std::chrono::milliseconds(10));
+      rclcpp::sleep_for(std::chrono::milliseconds(1000));
     }
     RCLCPP_INFO(this->get_logger(), "Hand joint discovery sweep complete.");
   }
