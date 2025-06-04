@@ -148,9 +148,9 @@ public:
         }
     );
 
-    // Timer for periodic closed-loop grasping (100 Hz)
+    // Timer for periodic closed-loop grasping (10 Hz)
     closed_loop_timer_ = this->create_wall_timer(
-      10ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
+      100ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
   }
 private:
   std::string side;
@@ -322,7 +322,7 @@ private:
         initialized = true;
       }
       // Feedback-driven grasp maintenance
-      const float max_delta = 0.01f;
+      const float max_delta = 0.1f;
       double thumb_val = thumb_tactile_;
       double finger_val = finger_tactile_;
       bool need_regrip = !(thumb_val > tactile_threshold_ && finger_val > tactile_threshold_);
