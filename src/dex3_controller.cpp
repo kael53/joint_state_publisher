@@ -154,9 +154,37 @@ public:
     );
 
     // Timer for periodic closed-loop grasping (10 Hz)
-    //closed_loop_timer_ = this->create_wall_timer(
-    //  100ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
+    closed_loop_timer_ = this->create_wall_timer(
+      100ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
   }
+
+  ~Dex3Controller() override {
+    RCLCPP_INFO(this->get_logger(), "Releasing hand on shutdown...");
+
+    unitree_hg::msg::HandCmd release_cmd;
+    release_cmd.motor_cmd.resize(hand_joint_names.size());
+    for (size_t i = 0; i < hand_joint_names.size(); ++i) {
+      RIS_Mode_t ris_mode;
+      ris_mode.id = i;
+      ris_mode.status = 0x00;  // Lock mode
+      ris_mode.timeout = 0x01; // Enable timeout protection
+
+      uint8_t mode = 0;
+      mode |= (ris_mode.id & 0x0F);
+      mode |= (ris_mode.status & 0x07) << 4;
+      mode |= (ris_mode.timeout & 0x01) << 7;
+
+      release_cmd.motor_cmd[i].mode = mode;
+      release_cmd.motor_cmd[i].q = 0.f;
+      release_cmd.motor_cmd[i].dq = 0.f;
+      release_cmd.motor_cmd[i].kp = 0.f;
+      release_cmd.motor_cmd[i].kd = 0.f;
+      release_cmd.motor_cmd[i].tau = 0.f;
+    }
+    hand_cmd_pub_->publish(release_cmd);
+    rclcpp::sleep_for(std::chrono::milliseconds(10));
+  }
+
 private:
   std::string side;
   std::string input_topic;
@@ -173,9 +201,10 @@ private:
       hand_cmd.motor_cmd.resize(hand_joint_names.size()); // Resize to number of hand joints
       for (size_t i = 0; i < hand_joint_names.size(); ++i) {
         auto joint_name = hand_joint_names[i];
+        auto target_index = joint_name_to_index_.at(joint_name);
 
         RIS_Mode_t ris_mode;
-        ris_mode.id = i; // Set id
+        ris_mode.id = target_index; // Set id
         ris_mode.status = 0x01;  // Set status to 0x01 (FOC mode)
         ris_mode.timeout = 0x00; // Set timeout to 0x00 (no timeout)
     
@@ -184,39 +213,38 @@ private:
         mode |= (ris_mode.status & 0x07) << 4; // Get upper 3 bits of status and shift left 4 bits
         mode |= (ris_mode.timeout & 0x01) << 7; // Get upper 1 bit of timeout and shift left 7 bits
 
-        hand_cmd.motor_cmd[i].mode = mode; // Set the mode for the hand joint
+        hand_cmd.motor_cmd[target_index].mode = mode; // Set the mode for the hand joint
 
         float target_position = 0.0f; // Default target position for opening the hand
 
         // Clamp using URDF joint limits if available
-        auto lim_it = joint_limits_.find(joint_name);
-        if (lim_it != joint_limits_.end()) {
-          const auto& lim = lim_it->second;
-          //left hand thumb_1 should be set to the lower limit
-          //right hand thumb_1 should be set to the upper limit
-          //for other fingers, its always 0
-          if (joint_name.find("thumb_1") != std::string::npos) {
-            if (side == "left") {
-              target_position = lim.lower;
-            } else if (side == "right") {
-              target_position = lim.upper;
-            }
-          } else if (joint_name.find("thumb_0") != std::string::npos) {
-            target_position = (lim.lower + lim.upper) / 2.0f;
-          } else {
-            if (side == "left") {
-              target_position = lim.upper;
-            } else if (side == "right") {
-              target_position = lim.lower;
-            }
+        auto lim = joint_limits_.at(joint_name);
+
+        //left hand thumb_1 should be set to the lower limit
+        //right hand thumb_1 should be set to the upper limit
+        //for other fingers, its always 0
+        if (joint_name.find("thumb_1") != std::string::npos) {
+          if (side == "left") {
+            target_position = lim.lower;
+          } else if (side == "right") {
+            target_position = lim.upper;
+          }
+        } else if (joint_name.find("thumb_0") != std::string::npos) {
+          target_position = (lim.lower + lim.upper) / 2.0f;
+        } else {
+          if (side == "left") {
+            target_position = lim.upper;
+          } else if (side == "right") {
+            target_position = lim.lower;
           }
         }
+        
 
-        hand_cmd.motor_cmd[i].q = target_position; // Open the hand fully (or thumb_0 to middle)
-        hand_cmd.motor_cmd[i].dq = 0.f; // No velocity command for opening
-        hand_cmd.motor_cmd[i].kp = 0.5f;
-        hand_cmd.motor_cmd[i].kd = 0.1f;
-        hand_cmd.motor_cmd[i].tau = 0.f;
+        hand_cmd.motor_cmd[target_index].q = target_position; // Open the hand fully (or thumb_0 to middle)
+        hand_cmd.motor_cmd[target_index].dq = 0.f; // No velocity command for opening
+        hand_cmd.motor_cmd[target_index].kp = 0.5f;
+        hand_cmd.motor_cmd[target_index].kd = 0.1f;
+        hand_cmd.motor_cmd[target_index].tau = 0.f;
 
         RCLCPP_INFO(this->get_logger(), "Setting hand joint %s to position %f", joint_name.c_str(), target_position);
       }
@@ -228,45 +256,6 @@ private:
       RCLCPP_INFO(this->get_logger(), "Received close hand command");
       if (!closing_) {
         closing_ = true;
-
-              unitree_hg::msg::HandCmd hand_cmd;
-      hand_cmd.motor_cmd.resize(hand_joint_names.size()); // Resize to number of hand joints
-      for (size_t i = 0; i < hand_joint_names.size(); ++i) {
-        auto joint_name = hand_joint_names[i];
-
-        RIS_Mode_t ris_mode;
-        ris_mode.id = i; // Set id
-        ris_mode.status = 0x01;  // Set status to 0x01 (FOC mode)
-        ris_mode.timeout = 0x00; // Set timeout to 0x00 (no timeout)
-    
-        uint8_t mode = 0;
-        mode |= (ris_mode.id & 0x0F); // Get lower 4 bits of id
-        mode |= (ris_mode.status & 0x07) << 4; // Get upper 3 bits of status and shift left 4 bits
-        mode |= (ris_mode.timeout & 0x01) << 7; // Get upper 1 bit of timeout and shift left 7 bits
-
-        hand_cmd.motor_cmd[i].mode = mode; // Set the mode for the hand joint
-
-        float target_position = 0.0f; // Default target position for opening the hand
-
-        // Clamp using URDF joint limits if available
-        auto lim_it = joint_limits_.find(joint_name);
-        if (lim_it != joint_limits_.end()) {
-          const auto& lim = lim_it->second;
-          target_position = (lim.lower + lim.upper) / 2.0f; // Set to middle position for all joints
-        }
-
-        hand_cmd.motor_cmd[i].q = target_position; // Open the hand fully (or thumb_0 to middle)
-        hand_cmd.motor_cmd[i].dq = 0.f; // No velocity command for opening
-        hand_cmd.motor_cmd[i].kp = 0.5f;
-        hand_cmd.motor_cmd[i].kd = 0.1f;
-        hand_cmd.motor_cmd[i].tau = 0.f;
-
-        RCLCPP_INFO(this->get_logger(), "Setting hand joint %s to position %f", joint_name.c_str(), target_position);
-      }
-
-      // Publish the hand command to open it fully
-      hand_cmd_pub_->publish(hand_cmd);
-      rclcpp::sleep_for(1s);  // Wait for the last command to take effect
 
         // No need to start a timer, main loop handles closing
       }
@@ -323,7 +312,10 @@ private:
     current_positions_.resize(hand_joint_names.size(), 0.0f);
     if (msg->motor_state.size() == hand_joint_names.size()) {
       for (size_t i = 0; i < hand_joint_names.size(); ++i) {
-        current_positions_[i] = msg->motor_state[i].q;
+        auto joint_name = hand_joint_names[i];
+        auto target_index = joint_name_to_index_.at(joint_name);
+
+        current_positions_[target_index] = msg->motor_state[target_index].q;
       }
     }
   }
@@ -339,28 +331,28 @@ private:
         closed_positions.resize(n, 0.0f);
         for (size_t i = 0; i < n; ++i) {
           const auto& joint_name = hand_joint_names[i];
-          auto lim_it = joint_limits_.find(joint_name);
-          if (lim_it != joint_limits_.end()) {
-            const auto& lim = lim_it->second;
-            if (joint_name.find("thumb_0") != std::string::npos) {
-              open_positions[i] = 0.0f;
-              closed_positions[i] = 0.0f;
-            } else if (joint_name.find("thumb_1") != std::string::npos || joint_name.find("thumb_2") != std::string::npos) {
-              if (side == "left") {
-                open_positions[i] = lim.lower;
-                closed_positions[i] = lim.upper;
-              } else if (side == "right") {
-                open_positions[i] = lim.upper;
-                closed_positions[i] = lim.lower;
-              }
-            } else {
-              if (side == "left") {
-                open_positions[i] = 0.f;
-                closed_positions[i] = lim.lower;
-              } else if (side == "right") {
-                open_positions[i] = 0.f;
-                closed_positions[i] = lim.upper;
-              }
+          auto target_index = joint_name_to_index_.at(joint_name);
+
+          auto lim = joint_limits_.at(joint_name);
+
+          if (joint_name.find("thumb_0") != std::string::npos) {
+            open_positions[target_index] = 0.0f;
+            closed_positions[target_index] = 0.0f;
+          } else if (joint_name.find("thumb_1") != std::string::npos || joint_name.find("thumb_2") != std::string::npos) {
+            if (side == "left") {
+              open_positions[target_index] = lim.lower;
+              closed_positions[target_index] = lim.upper;
+            } else if (side == "right") {
+              open_positions[target_index] = lim.upper;
+              closed_positions[target_index] = lim.lower;
+            }
+          } else {
+            if (side == "left") {
+              open_positions[target_index] = 0.f;
+              closed_positions[target_index] = lim.lower;
+            } else if (side == "right") {
+              open_positions[target_index] = 0.f;
+              closed_positions[target_index] = lim.upper;
             }
           }
         }
@@ -377,25 +369,32 @@ private:
         interp_cmd.motor_cmd.resize(hand_joint_names.size());
         for (size_t i = 0; i < hand_joint_names.size(); ++i) {
           const auto& joint_name = hand_joint_names[i];
+          auto target_index = joint_name_to_index_.at(joint_name);
+
           RIS_Mode_t ris_mode;
-          ris_mode.id = i;
+          ris_mode.id = target_index;
           ris_mode.status = 0x01;
           ris_mode.timeout = 0x00;
+
           uint8_t mode = 0;
           mode |= (ris_mode.id & 0x0F);
           mode |= (ris_mode.status & 0x07) << 4;
           mode |= (ris_mode.timeout & 0x01) << 7;
-          interp_cmd.motor_cmd[i].mode = mode;
-          float target = closed_positions[i];
-          float diff = target - current_positions_[i];
+
+          interp_cmd.motor_cmd[target_index].mode = mode;
+
+          float target = closed_positions[target_index];
+          float diff = target - current_positions_[target_index];
           float step = std::clamp(diff, -max_delta, max_delta); // Limit step size to max_delta
-          float next = current_positions_[i] + step;
-          interp_cmd.motor_cmd[i].q = next;
-          interp_cmd.motor_cmd[i].dq = 0.f;
-          interp_cmd.motor_cmd[i].kp = 0.5f;
-          interp_cmd.motor_cmd[i].kd = 0.1f;
-          interp_cmd.motor_cmd[i].tau = 0.f;
-          RCLCPP_INFO(this->get_logger(), "Interpolating hand joint %s to position %f (current: %f, target: %f)", joint_name.c_str(), next, current_positions_[i], target);
+          float next = current_positions_[target_index] + step;
+          
+          interp_cmd.motor_cmd[target_index].q = next;
+          interp_cmd.motor_cmd[target_index].dq = 0.f;
+          interp_cmd.motor_cmd[target_index].kp = 0.5f;
+          interp_cmd.motor_cmd[target_index].kd = 0.1f;
+          interp_cmd.motor_cmd[target_index].tau = 0.f;
+
+          RCLCPP_INFO(this->get_logger(), "Interpolating hand joint %s to position %f (current: %f, target: %f)", joint_name.c_str(), next, current_positions_[target_index], target);
         }
         hand_cmd_pub_->publish(interp_cmd);
       }
@@ -411,13 +410,14 @@ private:
     std::vector<float> minLimits(hand_joint_names.size(), 0.0f);
     for (size_t i = 0; i < hand_joint_names.size(); ++i) {
       const auto& joint_name = hand_joint_names[i];
-      auto lim_it = joint_limits_.find(joint_name);
-      if (lim_it != joint_limits_.end()) {
-        minLimits[i] = lim_it->second.lower;
-        maxLimits[i] = lim_it->second.upper;
-        RCLCPP_INFO(this->get_logger(), "Hand joint %s limits %zu: min = [%s], max = [%s]", joint_name, i,
-        std::to_string(minLimits[i]).c_str(), std::to_string(maxLimits[i]).c_str());
-      }
+      auto target_index = joint_name_to_index_.at(joint_name);
+
+      auto lim = joint_limits_.at(joint_name);
+
+      minLimits[target_index] = lim_it->second.lower;
+      maxLimits[target_index] = lim_it->second.upper;
+      RCLCPP_INFO(this->get_logger(), "Hand joint %s limits %zu: min = [%s], max = [%s]", joint_name.c_str(), target_index,
+      std::to_string(minLimits[target_index]).c_str(), std::to_string(maxLimits[target_index]).c_str());
     }
 
     int steps = 400; // Number of steps for a full sweep
@@ -425,23 +425,26 @@ private:
       unitree_hg::msg::HandCmd msg;
       msg.motor_cmd.resize(hand_joint_names.size());
       for (size_t i = 0; i < hand_joint_names.size(); ++i) {
+        const auto& joint_name = hand_joint_names[i];
+        auto target_index = joint_name_to_index_.at(joint_name);
+
         RIS_Mode_t ris_mode;
-        ris_mode.id = i;
+        ris_mode.id = target_index;
         ris_mode.status = 0x01;
         ris_mode.timeout = 0x00;
         uint8_t mode = 0;
         mode |= (ris_mode.id & 0x0F);
         mode |= (ris_mode.status & 0x07) << 4;
         mode |= (ris_mode.timeout & 0x01) << 7;
-        msg.motor_cmd[i].mode = mode;
-        msg.motor_cmd[i].tau = 0;
-        msg.motor_cmd[i].kp = 0.5f;
-        msg.motor_cmd[i].kd = 0.1f;
-        float range = maxLimits[i] - minLimits[i];
-        float mid = (maxLimits[i] + minLimits[i]) / 2.0f;
+        msg.motor_cmd[target_index].mode = mode;
+        msg.motor_cmd[target_index].tau = 0;
+        msg.motor_cmd[target_index].kp = 0.5f;
+        msg.motor_cmd[target_index].kd = 0.1f;
+        float range = maxLimits[target_index] - minLimits[target_index];
+        float mid = (maxLimits[target_index] + minLimits[target_index]) / 2.0f;
         float amplitude = range / 2.0f;
         float q = mid + amplitude * std::sin(count / static_cast<float>(steps) * M_PI * 2.0f);
-        msg.motor_cmd[i].q = q;
+        msg.motor_cmd[target_index].q = q;
       }
       hand_cmd_pub_->publish(msg);
       RCLCPP_DEBUG(this->get_logger(), "Sweeping hand joints: step %d/%d", count + 1, steps);
@@ -464,41 +467,11 @@ private:
   rclcpp::TimerBase::SharedPtr closed_loop_timer_;
 
   std::vector<float> current_positions_;
-
-  // Public method to release the hand safely on shutdown
-public:
-  void release_hand() {
-    if (!hand_joint_names.empty() && hand_cmd_pub_) {
-      unitree_hg::msg::HandCmd release_cmd;
-      release_cmd.motor_cmd.resize(hand_joint_names.size());
-      for (size_t i = 0; i < hand_joint_names.size(); ++i) {
-        RIS_Mode_t ris_mode;
-        ris_mode.id = i;
-        ris_mode.status = 0x00;  // Lock mode
-        ris_mode.timeout = 0x01; // Enable timeout protection
-        uint8_t mode = 0;
-        mode |= (ris_mode.id & 0x0F);
-        mode |= (ris_mode.status & 0x07) << 4;
-        mode |= (ris_mode.timeout & 0x01) << 7;
-        release_cmd.motor_cmd[i].mode = mode;
-        release_cmd.motor_cmd[i].q = 0.f;
-        release_cmd.motor_cmd[i].dq = 0.f;
-        release_cmd.motor_cmd[i].kp = 0.f;
-        release_cmd.motor_cmd[i].kd = 0.f;
-        release_cmd.motor_cmd[i].tau = 0.f;
-      }
-      hand_cmd_pub_->publish(release_cmd);
-      rclcpp::sleep_for(std::chrono::milliseconds(10));
-    }
-  }
 };
 
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<Dex3Controller>();
-  rclcpp::spin(node);
-  // On shutdown, send release command to hand
-  node->release_hand();
+  rclcpp::spin(std::make_shared<Dex3Controller>());
   rclcpp::shutdown();
   return 0;
 }
