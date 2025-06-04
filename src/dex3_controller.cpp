@@ -111,6 +111,7 @@ public:
     std::set<std::string> hand_joints_set;
     std::function<void(const std::string&)> collect_hand_joints;
     collect_hand_joints = [&](const std::string& link_name) {
+      RCLCPP_INFO(this->get_logger(), "Collecting hand joints for link: %s", link_name.c_str());
       for (const auto& joint_pair : model.joints_) {
         auto joint = joint_pair.second;
         if (joint && joint->parent_link_name == link_name) {
@@ -126,9 +127,13 @@ public:
     hand_joint_names.clear();
     joint_limits_.clear();
     for (const auto& joint_name : hand_joints_set) {
+      RCLCPP_INFO(this->get_logger(), "Found hand joint: %s", joint_name.c_str());
       hand_joint_names.push_back(joint_name);
       auto joint = model.getJoint(joint_name);
       if (joint && joint->limits) {
+        RCLCPP_INFO(this->get_logger(), "Hand joint %s limits: lower = %f, upper = %f, velocity = %f, effort = %f",
+                    joint_name.c_str(), joint->limits->lower, joint->limits->upper,
+                    joint->limits->velocity, joint->limits->effort);
         joint_limits_[joint_name] = {joint->limits->lower, joint->limits->upper, joint->limits->velocity, joint->limits->effort};
       }
     }
@@ -410,7 +415,7 @@ private:
       if (lim_it != joint_limits_.end()) {
         minLimits[i] = lim_it->second.lower;
         maxLimits[i] = lim_it->second.upper;
-        RCLCPP_INFO(this->get_logger(), "Hand joint limits %zu: min = [%s], max = [%s]", i,
+        RCLCPP_INFO(this->get_logger(), "Hand joint %s limits %zu: min = [%s], max = [%s]", joint_name, i,
         std::to_string(minLimits[i]).c_str(), std::to_string(maxLimits[i]).c_str());
       }
     }
@@ -439,7 +444,7 @@ private:
         msg.motor_cmd[i].q = q;
       }
       hand_cmd_pub_->publish(msg);
-      RCLCPP_INFO(this->get_logger(), "Sweeping hand joints: step %d/%d", count + 1, steps);
+      RCLCPP_DEBUG(this->get_logger(), "Sweeping hand joints: step %d/%d", count + 1, steps);
       rclcpp::sleep_for(std::chrono::milliseconds(10));
     }
     RCLCPP_INFO(this->get_logger(), "Hand joint discovery sweep complete.");
