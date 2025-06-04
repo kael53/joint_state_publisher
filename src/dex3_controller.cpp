@@ -203,7 +203,7 @@ private:
 
         hand_cmd.motor_cmd[i].q = target_position; // Open the hand fully (or thumb_0 to middle)
         hand_cmd.motor_cmd[i].dq = 0.f; // No velocity command for opening
-        hand_cmd.motor_cmd[i].kp = 0.5f;
+        hand_cmd.motor_cmd[i].kp = 1.5f;
         hand_cmd.motor_cmd[i].kd = 0.1f;
         hand_cmd.motor_cmd[i].tau = 0.f;
 
@@ -340,13 +340,14 @@ private:
           float step = step_fraction * diff;
           float next = (std::abs(diff) > std::abs(step)) ? (current_positions_[i] + step) : target;
           interp_cmd.motor_cmd[i].q = next;
-          interp_cmd.motor_cmd[i].kp = 0.5f;
+          interp_cmd.motor_cmd[i].dq = 0.f;
+          interp_cmd.motor_cmd[i].kp = 1.5f;
           interp_cmd.motor_cmd[i].kd = 0.1f;
           interp_cmd.motor_cmd[i].tau = 0.f;
           RCLCPP_INFO(this->get_logger(), "Interpolating hand joint %s to position %f (current: %f, target: %f)", joint_name.c_str(), next, current_positions_[i], target);
         }
         hand_cmd_pub_->publish(interp_cmd);
-        rclcpp::sleep_for(std::chrono::milliseconds(20));
+        rclcpp::sleep_for(std::chrono::milliseconds(1));
       }
     } else {
       initialized = false;
@@ -394,7 +395,7 @@ private:
       }
       hand_cmd_pub_->publish(msg);
       RCLCPP_INFO(this->get_logger(), "Sweeping hand joints: step %d/%d", count + 1, steps);
-      rclcpp::sleep_for(std::chrono::milliseconds(100));
+      rclcpp::sleep_for(std::chrono::milliseconds(0.1));
     }
     RCLCPP_INFO(this->get_logger(), "Hand joint discovery sweep complete.");
   }
