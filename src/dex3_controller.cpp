@@ -359,8 +359,11 @@ private:
       if (lim_it != joint_limits_.end()) {
         minLimits[i] = lim_it->second.lower;
         maxLimits[i] = lim_it->second.upper;
+        RCLCPP_INFO(this->get_logger(), "Hand joint limits %zu: min = [%s], max = [%s]", i,
+        std::to_string(minLimits[i]).c_str(), std::to_string(maxLimits[i]).c_str());
       }
     }
+
     int steps = 400; // Number of steps for a full sweep
     for (int count = 0; count < steps; ++count) {
       unitree_hg::msg::HandCmd msg;
@@ -384,6 +387,7 @@ private:
         msg.motor_cmd[i].q = q;
       }
       hand_cmd_pub_->publish(msg);
+      RCLCPP_INFO(this->get_logger(), "Sweeping hand joints: step %d/%d", count + 1, steps);
       rclcpp::sleep_for(std::chrono::milliseconds(1000));
     }
     RCLCPP_INFO(this->get_logger(), "Hand joint discovery sweep complete.");
