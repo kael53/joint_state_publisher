@@ -322,7 +322,7 @@ private:
         initialized = true;
       }
       // Feedback-driven grasp maintenance
-      const float max_delta = 0.1f;
+      const float max_delta = 0.5f;
       double thumb_val = thumb_tactile_;
       double finger_val = finger_tactile_;
       bool need_regrip = !(thumb_val > tactile_threshold_ && finger_val > tactile_threshold_);
