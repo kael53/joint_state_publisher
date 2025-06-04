@@ -201,7 +201,7 @@ private:
       hand_cmd.motor_cmd.resize(hand_joint_names.size()); // Resize to number of hand joints
       for (size_t i = 0; i < hand_joint_names.size(); ++i) {
         auto joint_name = hand_joint_names[i];
-        auto target_index = joint_name_to_index_.at(joint_name);
+        auto target_index = hand_joint_name_to_index.at(joint_name);
 
         RIS_Mode_t ris_mode;
         ris_mode.id = target_index; // Set id
@@ -313,7 +313,7 @@ private:
     if (msg->motor_state.size() == hand_joint_names.size()) {
       for (size_t i = 0; i < hand_joint_names.size(); ++i) {
         auto joint_name = hand_joint_names[i];
-        auto target_index = joint_name_to_index_.at(joint_name);
+        auto target_index = hand_joint_name_to_index.at(joint_name);
 
         current_positions_[target_index] = msg->motor_state[target_index].q;
       }
@@ -331,7 +331,7 @@ private:
         closed_positions.resize(n, 0.0f);
         for (size_t i = 0; i < n; ++i) {
           const auto& joint_name = hand_joint_names[i];
-          auto target_index = joint_name_to_index_.at(joint_name);
+          auto target_index = hand_joint_name_to_index.at(joint_name);
 
           auto lim = joint_limits_.at(joint_name);
 
@@ -369,7 +369,7 @@ private:
         interp_cmd.motor_cmd.resize(hand_joint_names.size());
         for (size_t i = 0; i < hand_joint_names.size(); ++i) {
           const auto& joint_name = hand_joint_names[i];
-          auto target_index = joint_name_to_index_.at(joint_name);
+          auto target_index = hand_joint_name_to_index.at(joint_name);
 
           RIS_Mode_t ris_mode;
           ris_mode.id = target_index;
@@ -387,7 +387,7 @@ private:
           float diff = target - current_positions_[target_index];
           float step = std::clamp(diff, -max_delta, max_delta); // Limit step size to max_delta
           float next = current_positions_[target_index] + step;
-          
+
           interp_cmd.motor_cmd[target_index].q = next;
           interp_cmd.motor_cmd[target_index].dq = 0.f;
           interp_cmd.motor_cmd[target_index].kp = 0.5f;
@@ -410,7 +410,7 @@ private:
     std::vector<float> minLimits(hand_joint_names.size(), 0.0f);
     for (size_t i = 0; i < hand_joint_names.size(); ++i) {
       const auto& joint_name = hand_joint_names[i];
-      auto target_index = joint_name_to_index_.at(joint_name);
+      auto target_index = hand_joint_name_to_index.at(joint_name);
 
       auto lim = joint_limits_.at(joint_name);
 
@@ -426,7 +426,7 @@ private:
       msg.motor_cmd.resize(hand_joint_names.size());
       for (size_t i = 0; i < hand_joint_names.size(); ++i) {
         const auto& joint_name = hand_joint_names[i];
-        auto target_index = joint_name_to_index_.at(joint_name);
+        auto target_index = hand_joint_name_to_index.at(joint_name);
 
         RIS_Mode_t ris_mode;
         ris_mode.id = target_index;
