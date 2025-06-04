@@ -165,6 +165,7 @@ private:
       closing_ = false; // Interrupt any closing loop
 
       unitree_hg::msg::HandCmd hand_cmd;
+      hand_cmd.motor_cmd.resize(hand_joint_names.size()); // Resize to number of hand joints
       for (size_t i = 0; i < hand_joint_names.size(); ++i) {
         auto joint_name = hand_joint_names[i];
 
@@ -323,6 +324,7 @@ private:
       RCLCPP_INFO(this->get_logger(), "Thumb tactile: %f, Finger tactile: %f, Need regrip: %s", thumb_val, finger_val, need_regrip ? "true" : "false");
       if (need_regrip) {
         unitree_hg::msg::HandCmd interp_cmd;
+        interp_cmd.motor_cmd.resize(hand_joint_names.size());
         for (size_t i = 0; i < hand_joint_names.size(); ++i) {
           const auto& joint_name = hand_joint_names[i];
           RIS_Mode_t ris_mode;
@@ -376,6 +378,7 @@ private:
     int steps = 400; // Number of steps for a full sweep
     for (int count = 0; count < steps; ++count) {
       unitree_hg::msg::HandCmd msg;
+      msg.motor_cmd.resize(hand_joint_names.size());
       for (size_t i = 0; i < hand_joint_names.size(); ++i) {
         RIS_Mode_t ris_mode;
         ris_mode.id = i;
@@ -420,6 +423,7 @@ public:
   void release_hand() {
     if (!hand_joint_names.empty() && hand_cmd_pub_) {
       unitree_hg::msg::HandCmd release_cmd;
+      release_cmd.motor_cmd.resize(hand_joint_names.size());
       for (size_t i = 0; i < hand_joint_names.size(); ++i) {
         RIS_Mode_t ris_mode;
         ris_mode.id = i;
