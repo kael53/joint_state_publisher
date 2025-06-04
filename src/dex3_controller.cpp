@@ -197,7 +197,7 @@ private:
               target_position = lim.upper;
             }
           } else {
-            target_position = 0.0f;
+            target_position = (lim.lower + lim.upper) / 2.0f;
           }
         }
 
