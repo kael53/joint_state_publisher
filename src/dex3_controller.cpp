@@ -351,10 +351,9 @@ private:
   void rotateMotorsCalibration() {
     // This function will be called once at startup to sweep all motors through their range
     RCLCPP_INFO(this->get_logger(), "Starting hand joint discovery sweep...");
-    const int MOTOR_MAX = hand_joint_names.size();
-    std::vector<float> maxLimits(MOTOR_MAX, 0.0f);
-    std::vector<float> minLimits(MOTOR_MAX, 0.0f);
-    for (int i = 0; i < MOTOR_MAX; ++i) {
+    std::vector<float> maxLimits(hand_joint_names.size(), 0.0f);
+    std::vector<float> minLimits(hand_joint_names.size(), 0.0f);
+    for (size_t i = 0; i < hand_joint_names.size(); ++i) {
       const auto& joint_name = hand_joint_names[i];
       auto lim_it = joint_limits_.find(joint_name);
       if (lim_it != joint_limits_.end()) {
@@ -365,7 +364,7 @@ private:
     int steps = 400; // Number of steps for a full sweep
     for (int count = 0; count < steps; ++count) {
       unitree_hg::msg::HandCmd msg;
-      for (int i = 0; i < MOTOR_MAX; ++i) {
+      for (size_t i = 0; i < hand_joint_names.size(); ++i) {
         RIS_Mode_t ris_mode;
         ris_mode.id = i;
         ris_mode.status = 0x01;
