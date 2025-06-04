@@ -137,7 +137,7 @@ public:
     RCLCPP_INFO(this->get_logger(), "Dex3Controller started. Subscribing to %s, publishing to %s, feedback from %s", input_topic.c_str(), output_topic.c_str(), state_topic.c_str());
 
     // In constructor, after all publishers/subscribers are created:
-    this->create_wall_timer(
+    calibration_timer_ = this->create_wall_timer(
         std::chrono::milliseconds(500),  // Wait 0.5s after startup
         [this]() {
             static bool done = false;
@@ -412,6 +412,7 @@ private:
   double thumb_tactile_ = 0.0;
   double finger_tactile_ = 0.0;
 
+  rclcpp::TimerBase::SharedPtr calibration_timer_;
   rclcpp::TimerBase::SharedPtr closed_loop_timer_;
 
   // Public method to release the hand safely on shutdown
