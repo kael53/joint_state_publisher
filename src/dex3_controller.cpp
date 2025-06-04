@@ -148,9 +148,9 @@ public:
         }
     );
 
-    // Timer for periodic closed-loop grasping (10 Hz)
+    // Timer for periodic closed-loop grasping (100 Hz)
     closed_loop_timer_ = this->create_wall_timer(
-      100ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
+      10ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
   }
 private:
   std::string side;
@@ -353,7 +353,6 @@ private:
           RCLCPP_INFO(this->get_logger(), "Interpolating hand joint %s to position %f (current: %f, target: %f)", joint_name.c_str(), next, current_positions_[i], target);
         }
         hand_cmd_pub_->publish(interp_cmd);
-        rclcpp::sleep_for(std::chrono::milliseconds(10));
       }
     } else {
       initialized = false;
