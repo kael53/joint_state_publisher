@@ -395,7 +395,7 @@ private:
       }
       hand_cmd_pub_->publish(msg);
       RCLCPP_INFO(this->get_logger(), "Sweeping hand joints: step %d/%d", count + 1, steps);
-      rclcpp::sleep_for(std::chrono::milliseconds(0.1));
+      rclcpp::sleep_for(std::chrono::microseconds(100));
     }
     RCLCPP_INFO(this->get_logger(), "Hand joint discovery sweep complete.");
   }
