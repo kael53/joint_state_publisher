@@ -150,7 +150,7 @@ public:
 
     // Timer for periodic closed-loop grasping (20 Hz)
     closed_loop_timer_ = this->create_wall_timer(
-      50ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
+      100ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
   }
 private:
   std::string side;
@@ -400,7 +400,7 @@ private:
       }
       hand_cmd_pub_->publish(msg);
       RCLCPP_INFO(this->get_logger(), "Sweeping hand joints: step %d/%d", count + 1, steps);
-      rclcpp::sleep_for(std::chrono::milliseconds(1000));
+      rclcpp::sleep_for(std::chrono::milliseconds(100));
     }
     RCLCPP_INFO(this->get_logger(), "Hand joint discovery sweep complete.");
   }
