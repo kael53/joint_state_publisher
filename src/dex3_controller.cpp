@@ -136,8 +136,17 @@ public:
 
     RCLCPP_INFO(this->get_logger(), "Dex3Controller started. Subscribing to %s, publishing to %s, feedback from %s", input_topic.c_str(), output_topic.c_str(), state_topic.c_str());
 
-    // Perform calibration on startup
-    rotateMotorsCalibration();
+    // In constructor, after all publishers/subscribers are created:
+    this->create_wall_timer(
+        std::chrono::milliseconds(500),  // Wait 0.5s after startup
+        [this]() {
+            static bool done = false;
+            if (!done) {
+                this->rotateMotorsCalibration();
+                done = true;
+            }
+        }
+    );
 
     // Timer for periodic closed-loop grasping (20 Hz)
     closed_loop_timer_ = this->create_wall_timer(
