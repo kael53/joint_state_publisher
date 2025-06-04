@@ -323,7 +323,7 @@ private:
         initialized = true;
       }
       // Feedback-driven grasp maintenance
-      const float step_fraction = 0.05f;
+      const float step_fraction = 0.005f;
       double thumb_val = thumb_tactile_;
       double finger_val = finger_tactile_;
       bool need_regrip = !(thumb_val > tactile_threshold_ && finger_val > tactile_threshold_);
@@ -348,7 +348,7 @@ private:
 
           float target = closed_positions[i];
           float diff = target - interp_positions[i];
-          float step = step_fraction * (target - open_positions[i]);
+          float step = step_fraction * diff;
           if (std::abs(diff) > std::abs(step)) {
             interp_positions[i] += step;
           } else {
@@ -356,10 +356,10 @@ private:
           }
 
           interp_cmd.motor_cmd[i].q = interp_positions[i];
-          interp_cmd.motor_cmd[i].dq = 0.0f;
-          interp_cmd.motor_cmd[i].kp = 1.0f;
+          interp_cmd.motor_cmd[i].dq = 0.f;
+          interp_cmd.motor_cmd[i].kp = 0.5f;
           interp_cmd.motor_cmd[i].kd = 0.1f;
-          interp_cmd.motor_cmd[i].tau = 0.0f;
+          interp_cmd.motor_cmd[i].tau = 0.f;
 
           RCLCPP_INFO(this->get_logger(), "Interpolating hand joint %s to position %f", joint_name.c_str(), interp_positions[i]);
         }
