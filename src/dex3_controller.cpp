@@ -247,21 +247,7 @@ private:
         auto lim_it = joint_limits_.find(joint_name);
         if (lim_it != joint_limits_.end()) {
           const auto& lim = lim_it->second;
-          if (joint_name.find("thumb_1") != std::string::npos || joint_name.find("thumb_2") != std::string::npos) {
-            if (side == "left") {
-              target_position = lim.upper;
-            } else if (side == "right") {
-              target_position = lim.lower;
-            }
-          } else if (joint_name.find("thumb_0") != std::string::npos) {
-            target_position = (lim.lower + lim.upper) / 2.0f;
-          } else {
-            if (side == "left") {
-              target_position = lim.lower;
-            } else if (side == "right") {
-              target_position = lim.upper;
-            }
-          }
+          target_position = (lim.lower + lim.upper) / 2.0f; // Set to middle position for all joints
         }
 
         hand_cmd.motor_cmd[i].q = target_position; // Open the hand fully (or thumb_0 to middle)
