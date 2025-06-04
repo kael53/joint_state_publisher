@@ -157,7 +157,7 @@ private:
   std::string input_topic;
   std::string output_topic;
   std::string state_topic;
-  double tactile_threshold_ = 1000.0; // 1000W => 8000Pa == 80 g/cm^2
+  double tactile_threshold_ = 10.5;
 
   void handCmdCallback(const std_msgs::msg::Bool::SharedPtr msg) {
     if (!msg->data) {
@@ -340,14 +340,13 @@ private:
           float step = step_fraction * diff;
           float next = (std::abs(diff) > std::abs(step)) ? (current_positions_[i] + step) : target;
           interp_cmd.motor_cmd[i].q = next;
-          interp_cmd.motor_cmd[i].dq = 0.f;
           interp_cmd.motor_cmd[i].kp = 0.5f;
           interp_cmd.motor_cmd[i].kd = 0.1f;
           interp_cmd.motor_cmd[i].tau = 0.f;
           RCLCPP_INFO(this->get_logger(), "Interpolating hand joint %s to position %f (current: %f, target: %f)", joint_name.c_str(), next, current_positions_[i], target);
         }
         hand_cmd_pub_->publish(interp_cmd);
-        rclcpp::sleep_for(std::chrono::milliseconds(10));
+        rclcpp::sleep_for(std::chrono::milliseconds(20));
       }
     } else {
       initialized = false;
