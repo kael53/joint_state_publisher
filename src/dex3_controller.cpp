@@ -301,7 +301,7 @@ private:
             if (joint_name.find("thumb_0") != std::string::npos) {
               open_positions[i] = 0.0f;
               closed_positions[i] = 0.0f;
-            } else if (joint_name.find("thumb_1") != std::string::npos) {
+            } else if (joint_name.find("thumb_1") != std::string::npos || joint_name.find("thumb_2") != std::string::npos) {
               if (side == "left") {
                 open_positions[i] = lim.lower;
                 closed_positions[i] = lim.upper;
@@ -352,7 +352,7 @@ private:
           }
           interp_cmd.motor_cmd[i].q = interp_positions[i];
           interp_cmd.motor_cmd[i].dq = 0.0f;
-          interp_cmd.motor_cmd[i].kp = 0.5f;
+          interp_cmd.motor_cmd[i].kp = 1.0f;
           interp_cmd.motor_cmd[i].kd = 0.1f;
           interp_cmd.motor_cmd[i].tau = 0.0f;
 
