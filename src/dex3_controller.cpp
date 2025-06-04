@@ -148,9 +148,9 @@ public:
         }
     );
 
-    // Timer for periodic closed-loop grasping (20 Hz)
+    // Timer for periodic closed-loop grasping (10 Hz)
     closed_loop_timer_ = this->create_wall_timer(
-      50ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
+      100ms, std::bind(&Dex3Controller::closedLoopGrasping, this));
   }
 private:
   std::string side;
@@ -209,7 +209,7 @@ private:
 
         hand_cmd.motor_cmd[i].q = target_position; // Open the hand fully (or thumb_0 to middle)
         hand_cmd.motor_cmd[i].dq = 0.f; // No velocity command for opening
-        hand_cmd.motor_cmd[i].kp = 1.5f;
+        hand_cmd.motor_cmd[i].kp = 0.5f;
         hand_cmd.motor_cmd[i].kd = 0.1f;
         hand_cmd.motor_cmd[i].tau = 0.f;
 
@@ -322,7 +322,7 @@ private:
         initialized = true;
       }
       // Feedback-driven grasp maintenance
-      const float max_delta = 0.05f;
+      const float max_delta = 0.01f;
       double thumb_val = thumb_tactile_;
       double finger_val = finger_tactile_;
       bool need_regrip = !(thumb_val > tactile_threshold_ && finger_val > tactile_threshold_);
@@ -347,13 +347,13 @@ private:
           float next = current_positions_[i] + step;
           interp_cmd.motor_cmd[i].q = next;
           interp_cmd.motor_cmd[i].dq = 0.f;
-          interp_cmd.motor_cmd[i].kp = 1.5f;
+          interp_cmd.motor_cmd[i].kp = 0.5f;
           interp_cmd.motor_cmd[i].kd = 0.1f;
           interp_cmd.motor_cmd[i].tau = 0.f;
           RCLCPP_INFO(this->get_logger(), "Interpolating hand joint %s to position %f (current: %f, target: %f)", joint_name.c_str(), next, current_positions_[i], target);
         }
         hand_cmd_pub_->publish(interp_cmd);
-        rclcpp::sleep_for(std::chrono::milliseconds(1));
+        rclcpp::sleep_for(std::chrono::milliseconds(10));
       }
     } else {
       initialized = false;
@@ -401,7 +401,7 @@ private:
       }
       hand_cmd_pub_->publish(msg);
       RCLCPP_INFO(this->get_logger(), "Sweeping hand joints: step %d/%d", count + 1, steps);
-      rclcpp::sleep_for(std::chrono::microseconds(100));
+      rclcpp::sleep_for(std::chrono::milliseconds(10));
     }
     RCLCPP_INFO(this->get_logger(), "Hand joint discovery sweep complete.");
   }
