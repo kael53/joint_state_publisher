@@ -196,7 +196,7 @@ private:
 
         hand_cmd.motor_cmd[i].q = target_position; // Open the hand fully (or thumb_0 to middle)
         hand_cmd.motor_cmd[i].dq = 0.f; // No velocity command for opening
-        hand_cmd.motor_cmd[i].kp = 1.5f;
+        hand_cmd.motor_cmd[i].kp = 0.5f;
         hand_cmd.motor_cmd[i].kd = 0.1f;
         hand_cmd.motor_cmd[i].tau = 0.f;
 
@@ -341,7 +341,7 @@ private:
             interp_cmd.motor_cmd[i].q = interp_positions[i];
           }
           interp_cmd.motor_cmd[i].dq = 0.0f;
-          interp_cmd.motor_cmd[i].kp = 1.5f;
+          interp_cmd.motor_cmd[i].kp = 0.5f;
           interp_cmd.motor_cmd[i].kd = 0.1f;
           interp_cmd.motor_cmd[i].tau = 0.0f;
         }
