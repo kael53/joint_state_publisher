@@ -190,7 +190,7 @@ private:
   std::string input_topic;
   std::string output_topic;
   std::string state_topic;
-  double tactile_threshold_ = 10.5;
+  double tactile_threshold_ = 10.2;
 
   void handCmdCallback(const std_msgs::msg::Bool::SharedPtr msg) {
     if (!msg->data) {
