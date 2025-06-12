@@ -141,10 +141,12 @@ private:
 
     for (size_t i = 0; i < msg->points.size(); ++i) {
       const auto& point = msg->points[i];
+      RCLCPP_INFO(this->get_logger(), "Executing trajectory point %zu / %zu at time %f", i, msg->points.size(), point.time_from_start.seconds());
       unitree_hg::msg::LowCmd cmd_msg;
 
       cmd_msg.motor_cmd[JointIndex::kNotUsedJoint].q = 1.0f; // Full transition speed for trajectory following
       for (size_t j = 0; j < point.positions.size(); ++j) {
+        RCLCPP_INFO(this->get_logger(), "Setting joint %s (%zu / %zu) to position %f", msg->joint_names[j].c_str(), j, point.positions.size(), point.positions[j]);
         auto target_joint_name = msg->joint_names[j];
         auto target_index = joint_name_to_index.at(target_joint_name);
         auto target_position = point.positions[j];
