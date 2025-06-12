@@ -22,8 +22,16 @@ public:
     std::string urdf_xml;
 
     auto client = this->create_client<rcl_interfaces::srv::GetParameters>("/robot_state_publisher/get_parameters");
+    int max_retries = 5;
+    int retry_count = 0;
     while (!client->wait_for_service(std::chrono::seconds(1))) {
       RCLCPP_INFO(this->get_logger(), "Waiting for /robot_state_publisher service...");
+      retry_count++;
+      if (retry_count >= max_retries) {
+        RCLCPP_FATAL(this->get_logger(), "Service /robot_state_publisher/get_parameters not available after %d attempts. Shutting down.", max_retries);
+        rclcpp::shutdown();
+        return;
+      }
     }
     
     auto request = std::make_shared<rcl_interfaces::srv::GetParameters::Request>();
