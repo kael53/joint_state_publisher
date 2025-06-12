@@ -45,7 +45,7 @@ public:
     output_topic = "/dex3/" + side + "/cmd";
     this->declare_parameter("input_topic", input_topic);
     this->get_parameter("input_topic", input_topic);
-    state_topic = "/dex3/" + side + "/state";
+    state_topic = "/lf/dex3/" + side + "/state";
     this->declare_parameter("tactile_threshold", tactile_threshold_);
     this->get_parameter("tactile_threshold", tactile_threshold_);
 
