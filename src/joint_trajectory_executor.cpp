@@ -47,6 +47,10 @@ public:
       "/joint_trajectory_targets", 10,
       std::bind(&JointTrajectoryExecutor::trajectoryCallback, this, std::placeholders::_1));
 
+    lowstate_sub_ = this->create_subscription<unitree_hg::msg::LowState>(
+      "/lf/lowstate", 10,
+      std::bind(&JointTrajectoryExecutor::lowstateCallback, this, std::placeholders::_1));
+
     // Load URDF and parse joint limits
     std::string urdf_xml;
         auto client = this->create_client<rcl_interfaces::srv::GetParameters>("/robot_state_publisher/get_parameters");
@@ -110,7 +114,20 @@ private:
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr left_hand_pub_;
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr right_hand_pub_;
   rclcpp::Subscription<trajectory_msgs::msg::JointTrajectory>::SharedPtr traj_sub_;
+  rclcpp::Subscription<unitree_hg::msg::LowState>::SharedPtr lowstate_sub_;
   std::map<std::string, JointLimits> joint_limits_;
+  std::vector<float> latest_joint_positions_;
+
+  void lowstateCallback(const unitree_hg::msg::LowState::SharedPtr msg) {
+    // Store latest positions for all arm joints
+    latest_joint_positions_.resize(joint_name_to_index.size(), 0.0f);
+    for (const auto& pair : joint_name_to_index) {
+      size_t idx = pair.second;
+      if (idx < msg->motor_state.size()) {
+        latest_joint_positions_[idx] = msg->motor_state[idx].q;
+      }
+    }
+  }
 
   void trajectoryCallback(const trajectory_msgs::msg::JointTrajectory::SharedPtr msg) {
     // Find out which hand to use based on the joint names
@@ -145,21 +162,27 @@ private:
       unitree_hg::msg::LowCmd cmd_msg;
 
       cmd_msg.motor_cmd[JointIndex::kNotUsedJoint].q = 1.0f; // Full transition speed for trajectory following
+      // Fill all joints with latest state first
+      for (const auto& pair : joint_name_to_index) {
+        size_t idx = pair.second;
+        if (latest_joint_positions_.size() > idx) {
+          cmd_msg.motor_cmd[idx].q = latest_joint_positions_[idx];
+        } else {
+          cmd_msg.motor_cmd[idx].q = 0.0f;
+        }
+        cmd_msg.motor_cmd[idx].dq = 0.f;
+        cmd_msg.motor_cmd[idx].kp = 60.0f;
+        cmd_msg.motor_cmd[idx].kd = 1.5f;
+        cmd_msg.motor_cmd[idx].tau = 0.f;
+      }
+      // Overwrite with trajectory values for joints present in this point
       for (size_t j = 0; j < point.positions.size(); ++j) {
-        RCLCPP_INFO(this->get_logger(), "Setting joint %s (%zu / %zu) to position %f", msg->joint_names[j].c_str(), j, point.positions.size(), point.positions[j]);
         auto target_joint_name = msg->joint_names[j];
         auto target_index = joint_name_to_index.at(target_joint_name);
         auto target_position = point.positions[j];
-
-        // Clamp using URDF joint limits if available
         auto lim = joint_limits_.at(target_joint_name);
         target_position = std::min(std::max(target_position, lim.lower), lim.upper);
-
         cmd_msg.motor_cmd[target_index].q = target_position;
-        cmd_msg.motor_cmd[target_index].dq = 0.f;
-        cmd_msg.motor_cmd[target_index].kp = 60.0f;
-        cmd_msg.motor_cmd[target_index].kd = 1.5f;
-        cmd_msg.motor_cmd[target_index].tau = 0.f;
       }
 
       // Wait until the scheduled time for this point
@@ -173,19 +196,20 @@ private:
     }
 
     RCLCPP_INFO(this->get_logger(), "Trajectory point %zu executed, sleeping for %d seconds", msg->points.size(), 2);
-    rclcpp::sleep_for(2s);  // Wait for the last command to take effect
+    rclcpp::sleep_for(1s);  // Wait for the last command to take effect
 
     // After executing the trajectory, close the hand
-    //hand_cmd.data = true; // Close hand command
-    //hand_cmd_pub->publish(hand_cmd); // Close hand command
-    //RCLCPP_INFO(this->get_logger(), "Hand closed after trajectory execution");
+    hand_cmd.data = true; // Close hand command
+    hand_cmd_pub->publish(hand_cmd); // Close hand command
+    RCLCPP_INFO(this->get_logger(), "Hand closed after trajectory execution");
 
     // Final command to stop arm control
-    //unitree_hg::msg::LowCmd final_cmd;
-    //final_cmd.motor_cmd[JointIndex::kNotUsedJoint].q = 0.0f;
-    //cmd_pub_->publish(final_cmd);
+    unitree_hg::msg::LowCmd final_cmd;
+    final_cmd.motor_cmd[JointIndex::kNotUsedJoint].q = 0.0f;
+    cmd_pub_->publish(final_cmd);
 
-    RCLCPP_INFO(this->get_logger(), "Trajectory execution complete.");
+    RCLCPP_INFO(this->get_logger(), "Trajectory execution complete, returning to default pose.");
+    rclcpp::sleep_for(5s);  // Wait for the last command to take effect
   }
 };
 
