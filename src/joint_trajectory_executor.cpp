@@ -178,7 +178,7 @@ private:
       }
       // Overwrite with trajectory values for joints present in this point
       for (size_t j = 0; j < point.positions.size(); ++j) {
-        RCLCPP_INFO(this->get_logger(), "Setting joint %zu to position %f positions size %zu joint_names size %zu", j, point.positions[j], point.positions.size(), msg->joint_names.size());
+        RCLCPP_INFO(this->get_logger(), "Setting joint %zu to position %f joint_name %s", j, point.positions[j], msg->joint_names[j].c_str());
         auto target_joint_name = msg->joint_names[j];
         auto target_index = joint_name_to_index.at(target_joint_name);
         auto target_position = point.positions[j];
