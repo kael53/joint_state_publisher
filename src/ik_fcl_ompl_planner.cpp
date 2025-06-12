@@ -456,8 +456,8 @@ private:
             RCLCPP_INFO(this->get_logger(), "KDL planning_joints match URDF joint_names_ order.");
         } else {
             RCLCPP_ERROR(this->get_logger(), "KDL planning_joints do NOT match URDF joint_names_ order: %s", warn_oss.str().c_str());
-            rclcpp::shutdown();
-            return;
+            //rclcpp::shutdown();
+            //return;
         }
 
         std::vector<double> planning_positions;

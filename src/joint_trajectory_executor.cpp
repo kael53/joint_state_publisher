@@ -158,13 +158,11 @@ private:
 
     for (size_t i = 0; i < msg->points.size(); ++i) {
       const auto& point = msg->points[i];
-      RCLCPP_INFO(this->get_logger(), "Executing trajectory point %zu / %zu", i, msg->points.size());
       unitree_hg::msg::LowCmd cmd_msg;
 
-      cmd_msg.motor_cmd[JointIndex::kNotUsedJoint].q = 1.0f; // Full transition speed for trajectory following
+      cmd_msg.motor_cmd[JointIndex::kNotUsedJoint].q = 0.5f; // Full transition speed for trajectory following
       // Fill all joints with latest state first
       for (const auto& pair : joint_name_to_index) {
-        RCLCPP_INFO(this->get_logger(), "Setting joint %s to index %zu", pair.first.c_str(), pair.second);
         size_t idx = pair.second;
         if (latest_joint_positions_.size() > idx) {
           cmd_msg.motor_cmd[idx].q = latest_joint_positions_[idx];
@@ -178,7 +176,6 @@ private:
       }
       // Overwrite with trajectory values for joints present in this point
       for (size_t j = 0; j < point.positions.size(); ++j) {
-        RCLCPP_INFO(this->get_logger(), "Setting joint %zu to position %f joint_name %s", j, point.positions[j], msg->joint_names[j].c_str());
         auto target_joint_name = msg->joint_names[j];
         auto target_index = joint_name_to_index.at(target_joint_name);
         auto target_position = point.positions[j];
