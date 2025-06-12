@@ -131,11 +131,14 @@ private:
     auto hand_cmd_pub = is_left_hand ? left_hand_pub_ : right_hand_pub_;
     std::vector<std::string> hand_joint_names;
     for (const auto& [key, _] : hand_joint_name_to_index) {
+      RCLCPP_INFO(this->get_logger(), "Checking joint: %s", key.c_str());
       if ((is_left_hand && key.find("left") != std::string::npos) ||
           (!is_left_hand && key.find("right") != std::string::npos)) {
         hand_joint_names.push_back(key);
       }
     }
+
+    RCLCPP_INFO(this->get_logger(), "Hand opened fully, starting trajectory execution");
 
     // Start with preparing the hand, open it fully
     hand_cmd_pub->publish(false); // Open hand command
