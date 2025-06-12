@@ -128,20 +128,12 @@ private:
     }
     bool is_left_hand = hand_it->find("left") != std::string::npos;
     RCLCPP_INFO(this->get_logger(), "Executing trajectory for %s hand", is_left_hand ? "left" : "right");
-    auto hand_cmd_pub = is_left_hand ? left_hand_pub_ : right_hand_pub_;
-    std::vector<std::string> hand_joint_names;
-    for (const auto& [key, _] : hand_joint_name_to_index) {
-      RCLCPP_INFO(this->get_logger(), "Checking joint: %s", key.c_str());
-      if ((is_left_hand && key.find("left") != std::string::npos) ||
-          (!is_left_hand && key.find("right") != std::string::npos)) {
-        hand_joint_names.push_back(key);
-      }
-    }
-
-    RCLCPP_INFO(this->get_logger(), "Hand opened fully, starting trajectory execution");
-
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr hand_cmd_pub = is_left_hand ? left_hand_pub_ : right_hand_pub_;
+    
     // Start with preparing the hand, open it fully
-    hand_cmd_pub->publish(false); // Open hand command
+    std_msgs::msg::Bool hand_cmd;
+    hand_cmd.data = false; // Open hand command
+    hand_cmd_pub->publish(hand_cmd); // Open hand command
 
     RCLCPP_INFO(this->get_logger(), "Hand opened fully, starting trajectory execution");
 
@@ -182,7 +174,8 @@ private:
     rclcpp::sleep_for(2s);  // Wait for the last command to take effect
 
     // After executing the trajectory, close the hand
-    hand_cmd_pub->publish(true); // Close hand command
+    hand_cmd.data = true; // Close hand command
+    hand_cmd_pub->publish(hand_cmd); // Close hand command
     RCLCPP_INFO(this->get_logger(), "Hand closed after trajectory execution");
 
     // Final command to stop arm control
