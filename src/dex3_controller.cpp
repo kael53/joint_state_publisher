@@ -224,7 +224,7 @@ private:
         //left hand thumb_1 should be set to the lower limit
         //right hand thumb_1 should be set to the upper limit
         //for other fingers, its always 0
-        if (joint_name.find("thumb_1") != std::string::npos) {
+        if (joint_name.find("thumb_1") != std::string::npos || joint_name.find("thumb_2") != std::string::npos) {
           if (side == "left") {
             target_position = lim.lower;
           } else if (side == "right") {
@@ -267,15 +267,35 @@ private:
     RCLCPP_DEBUG(this->get_logger(), "Received hand state feedback");
     // Tactile calibration step
     if (tactile_calibration_needed_) {
-      tactile_baseline_.clear();
+      size_t max_idx = 0;
       for (const auto& press : msg->press_sensor_state) {
-        for (size_t idx = 0; idx < press.pressure.size(); ++idx) {
-          if (tactile_baseline_.size() <= idx) tactile_baseline_.resize(idx+1, 0.0f);
-          tactile_baseline_[idx] = press.pressure[idx] != 30000 ? press.pressure[idx] / 10000.0f : 0.0f;
+        if (!press.pressure.empty()) {
+          max_idx = std::max(max_idx, press.pressure.size() - 1);
         }
       }
-      tactile_calibration_needed_ = false;
-      RCLCPP_INFO(this->get_logger(), "Tactile sensors calibrated. Baseline set.");
+      if (tactile_baseline_.size() <= max_idx) tactile_baseline_.resize(max_idx + 1, std::numeric_limits<float>::quiet_NaN());
+      // Set baseline only for valid sensors
+      for (const auto& press : msg->press_sensor_state) {
+        for (size_t idx = 0; idx < press.pressure.size(); ++idx) {
+          if (press.pressure[idx] != 30000 && std::isnan(tactile_baseline_[idx])) {
+            tactile_baseline_[idx] = press.pressure[idx] / 10000.0f;
+          }
+        }
+      }
+      // Check if all baselines are set
+      bool all_set = true;
+      for (size_t i = 0; i < tactile_baseline_.size(); ++i) {
+        if (std::isnan(tactile_baseline_[i])) {
+          all_set = false;
+          break;
+        }
+      }
+      if (all_set) {
+        tactile_calibration_needed_ = false;
+        RCLCPP_INFO(this->get_logger(), "Tactile sensors calibrated. Baseline set for all indices.");
+      } else {
+        RCLCPP_INFO(this->get_logger(), "Waiting for valid tactile readings for all sensors to complete calibration...");
+      }
     }
     // Aggregate tactile sensor values for thumb, index, middle, and palm, using only valid values and scaling
     float thumb_sum = 0.0f, index_sum = 0.0f, middle_sum = 0.0f, palm_sum = 0.0f;
