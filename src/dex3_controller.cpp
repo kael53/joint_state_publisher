@@ -190,12 +190,13 @@ private:
   std::string input_topic;
   std::string output_topic;
   std::string state_topic;
-  double tactile_threshold_ = 10.2;
+  double tactile_threshold_ = 0.1;
 
   void handCmdCallback(const std_msgs::msg::Bool::SharedPtr msg) {
     if (!msg->data) {
       RCLCPP_INFO(this->get_logger(), "Received open hand command");
       closing_ = false; // Interrupt any closing loop
+      tactile_calibration_needed_ = true; // Trigger tactile calibration on next reading
 
       unitree_hg::msg::HandCmd hand_cmd;
       hand_cmd.motor_cmd.resize(hand_joint_names.size()); // Resize to number of hand joints
@@ -264,6 +265,18 @@ private:
 
   void handStateCallback(const unitree_hg::msg::HandState::SharedPtr msg) {
     RCLCPP_DEBUG(this->get_logger(), "Received hand state feedback");
+    // Tactile calibration step
+    if (tactile_calibration_needed_) {
+      tactile_baseline_.clear();
+      for (const auto& press : msg->press_sensor_state) {
+        for (size_t idx = 0; idx < press.pressure.size(); ++idx) {
+          if (tactile_baseline_.size() <= idx) tactile_baseline_.resize(idx+1, 0.0f);
+          tactile_baseline_[idx] = press.pressure[idx] != 30000 ? press.pressure[idx] / 10000.0f : 0.0f;
+        }
+      }
+      tactile_calibration_needed_ = false;
+      RCLCPP_INFO(this->get_logger(), "Tactile sensors calibrated. Baseline set.");
+    }
     // Aggregate tactile sensor values for thumb, index, middle, and palm, using only valid values and scaling
     float thumb_sum = 0.0f, index_sum = 0.0f, middle_sum = 0.0f, palm_sum = 0.0f;
     size_t thumb_count = 0, index_count = 0, middle_count = 0, palm_count = 0;
@@ -271,33 +284,44 @@ private:
       // Thumb: indices 0, 1
       for (size_t idx : {0, 1}) {
         if (idx < press.pressure.size() && press.pressure[idx] != 30000) {
-          thumb_sum += press.pressure[idx] / 10000.0f;
+          float val = press.pressure[idx] / 10000.0f;
+          if (tactile_baseline_.size() > idx) val -= tactile_baseline_[idx];
+          thumb_sum += val;
           ++thumb_count;
         }
       }
       // Index: indices 4, 5
       for (size_t idx : {4, 5}) {
         if (idx < press.pressure.size() && press.pressure[idx] != 30000) {
-          index_sum += press.pressure[idx] / 10000.0f;
+          float val = press.pressure[idx] / 10000.0f;
+          if (tactile_baseline_.size() > idx) val -= tactile_baseline_[idx];
+          index_sum += val;
           ++index_count;
         }
       }
       // Middle: indices 2, 3
       for (size_t idx : {2, 3}) {
         if (idx < press.pressure.size() && press.pressure[idx] != 30000) {
-          middle_sum += press.pressure[idx] / 10000.0f;
+          float val = press.pressure[idx] / 10000.0f;
+          if (tactile_baseline_.size() > idx) val -= tactile_baseline_[idx];
+          middle_sum += val;
           ++middle_count;
         }
       }
       // Palm: indices 6, 7, 8
       for (size_t idx : {6, 7, 8}) {
         if (idx < press.pressure.size() && press.pressure[idx] != 30000) {
-          palm_sum += press.pressure[idx] / 10000.0f;
+          float val = press.pressure[idx] / 10000.0f;
+          if (tactile_baseline_.size() > idx) val -= tactile_baseline_[idx];
+          palm_sum += val;
           ++palm_count;
         }
       }
     }
     float thumb_avg = thumb_count > 0 ? thumb_sum / thumb_count : 0.0f;
+    float index_avg = index_count > 0 ? index_sum / index_count : 0.0f;
+    float middle_avg = middle_count > 0 ? middle_sum / middle_count : 0.0f;
+    float palm_avg = palm_count > 0 ? palm_sum / palm_count : 0.0f;
     float finger_palm_sum = 0.0f;
     int finger_palm_count = 0;
     if (index_count > 0) { finger_palm_sum += index_sum; finger_palm_count += index_count; }
@@ -305,8 +329,11 @@ private:
     if (palm_count > 0) { finger_palm_sum += palm_sum; finger_palm_count += palm_count; }
     float finger_palm_avg = finger_palm_count > 0 ? finger_palm_sum / finger_palm_count : 0.0f;
     thumb_tactile_ = thumb_avg;
+    index_tactile_ = index_avg;
+    middle_tactile_ = middle_avg;
+    palm_tactile_ = palm_avg;
     finger_tactile_ = finger_palm_avg;
-    RCLCPP_DEBUG(this->get_logger(), "Tactile thumb avg: %f, finger/palm avg: %f", thumb_avg, finger_palm_avg);
+    RCLCPP_DEBUG(this->get_logger(), "Tactile thumb avg: %f, index avg: %f, middle avg: %f, palm avg: %f, finger/palm avg: %f", thumb_avg, index_avg, middle_avg, palm_avg, finger_palm_avg);
 
     // Update current_positions_ from feedback
     current_positions_.resize(hand_joint_names.size(), 0.0f);
@@ -361,9 +388,26 @@ private:
       // Feedback-driven grasp maintenance
       const float max_delta = 5.0f;
       double thumb_val = thumb_tactile_;
-      double finger_val = finger_tactile_;
-      bool need_regrip = !(thumb_val > tactile_threshold_ && finger_val > tactile_threshold_);
-      RCLCPP_INFO(this->get_logger(), "Thumb tactile: %f, Finger tactile: %f, Need regrip: %s, sizes %zu - %zu", thumb_val, finger_val, need_regrip ? "true" : "false", current_positions_.size(), closed_positions.size());
+      double index_val = 0.0, middle_val = 0.0, palm_val = 0.0;
+      // Calculate index, middle, palm averages from the last handStateCallback
+      // We'll need to store these as member variables, so add them:
+      // double index_tactile_ = 0.0, middle_tactile_ = 0.0, palm_tactile_ = 0.0;
+      // Set them in handStateCallback when calculating thumb_tactile_ and finger_tactile_
+      index_val = index_tactile_;
+      middle_val = middle_tactile_;
+      palm_val = palm_tactile_;
+      // New need_regrip logic
+      bool thumb_ok = thumb_val > tactile_threshold_;
+      bool index_ok = index_val > tactile_threshold_;
+      bool middle_ok = middle_val > tactile_threshold_;
+      bool palm_ok = palm_val > tactile_threshold_;
+      bool need_regrip = true;
+      if ((thumb_ok && (index_ok || middle_ok || palm_ok)) ||
+          (index_ok && (palm_ok || thumb_ok)) ||
+          (middle_ok && (palm_ok || thumb_ok))) {
+        need_regrip = false;
+      }
+      RCLCPP_INFO(this->get_logger(), "Tactile: thumb=%f, index=%f, middle=%f, palm=%f, Need regrip: %s", thumb_val, index_val, middle_val, palm_val, need_regrip ? "true" : "false");
       if (need_regrip && current_positions_.size() == closed_positions.size()) {
         unitree_hg::msg::HandCmd interp_cmd;
         interp_cmd.motor_cmd.resize(hand_joint_names.size());
@@ -461,12 +505,17 @@ private:
   std::map<std::string, JointLimits> joint_limits_;
 
   double thumb_tactile_ = 0.0;
+  double index_tactile_ = 0.0;
+  double middle_tactile_ = 0.0;
+  double palm_tactile_ = 0.0;
   double finger_tactile_ = 0.0;
 
   rclcpp::TimerBase::SharedPtr calibration_timer_;
   rclcpp::TimerBase::SharedPtr closed_loop_timer_;
 
   std::vector<float> current_positions_;
+  std::vector<float> tactile_baseline_;
+  bool tactile_calibration_needed_ = false;
 };
 
 int main(int argc, char **argv) {
