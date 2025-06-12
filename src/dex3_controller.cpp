@@ -363,7 +363,7 @@ private:
       double thumb_val = thumb_tactile_;
       double finger_val = finger_tactile_;
       bool need_regrip = !(thumb_val > tactile_threshold_ && finger_val > tactile_threshold_);
-      RCLCPP_INFO(this->get_logger(), "Thumb tactile: %f, Finger tactile: %f, Need regrip: %s", thumb_val, finger_val, need_regrip ? "true" : "false");
+      RCLCPP_INFO(this->get_logger(), "Thumb tactile: %f, Finger tactile: %f, Need regrip: %s, sizes %zu - %zu", thumb_val, finger_val, need_regrip ? "true" : "false", current_positions_.size(), closed_positions.size());
       if (need_regrip && current_positions_.size() == closed_positions.size()) {
         unitree_hg::msg::HandCmd interp_cmd;
         interp_cmd.motor_cmd.resize(hand_joint_names.size());
