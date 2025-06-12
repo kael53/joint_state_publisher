@@ -164,6 +164,7 @@ private:
       cmd_msg.motor_cmd[JointIndex::kNotUsedJoint].q = 1.0f; // Full transition speed for trajectory following
       // Fill all joints with latest state first
       for (const auto& pair : joint_name_to_index) {
+        RCLCPP_INFO(this->get_logger(), "Setting joint %s to index %zu", pair.first.c_str(), pair.second);
         size_t idx = pair.second;
         if (latest_joint_positions_.size() > idx) {
           cmd_msg.motor_cmd[idx].q = latest_joint_positions_[idx];
@@ -177,6 +178,7 @@ private:
       }
       // Overwrite with trajectory values for joints present in this point
       for (size_t j = 0; j < point.positions.size(); ++j) {
+        RCLCPP_INFO(this->get_logger(), "Setting joint %zu to position %f", j, point.positions[j]);
         auto target_joint_name = msg->joint_names[j];
         auto target_index = joint_name_to_index.at(target_joint_name);
         auto target_position = point.positions[j];
