@@ -141,7 +141,7 @@ private:
 
     for (size_t i = 0; i < msg->points.size(); ++i) {
       const auto& point = msg->points[i];
-      RCLCPP_INFO(this->get_logger(), "Executing trajectory point %zu / %zu at time %f", i, msg->points.size(), point.time_from_start.seconds());
+      RCLCPP_INFO(this->get_logger(), "Executing trajectory point %zu / %zu", i, msg->points.size());
       unitree_hg::msg::LowCmd cmd_msg;
 
       cmd_msg.motor_cmd[JointIndex::kNotUsedJoint].q = 1.0f; // Full transition speed for trajectory following
