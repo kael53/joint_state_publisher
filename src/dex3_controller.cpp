@@ -274,28 +274,19 @@ private:
         }
       }
       if (tactile_baseline_.size() <= max_idx) tactile_baseline_.resize(max_idx + 1, std::numeric_limits<float>::quiet_NaN());
+      if (valid_tactile_indices_.size() <= max_idx) valid_tactile_indices_.resize(max_idx + 1, false);
       // Set baseline only for valid sensors
       for (const auto& press : msg->press_sensor_state) {
         for (size_t idx = 0; idx < press.pressure.size(); ++idx) {
           if (press.pressure[idx] != 30000 && std::isnan(tactile_baseline_[idx])) {
             tactile_baseline_[idx] = press.pressure[idx] / 10000.0f;
+            valid_tactile_indices_[idx] = true;
           }
         }
       }
-      // Check if all baselines are set
-      bool all_set = true;
-      for (size_t i = 0; i < tactile_baseline_.size(); ++i) {
-        if (std::isnan(tactile_baseline_[i])) {
-          all_set = false;
-          break;
-        }
-      }
-      if (all_set) {
-        tactile_calibration_needed_ = false;
-        RCLCPP_INFO(this->get_logger(), "Tactile sensors calibrated. Baseline set for all indices.");
-      } else {
-        RCLCPP_INFO(this->get_logger(), "Waiting for valid tactile readings for all sensors to complete calibration...");
-      }
+      // Calibration is done after first pass, only for valid indices
+      tactile_calibration_needed_ = false;
+      RCLCPP_INFO(this->get_logger(), "Tactile sensors calibrated. Baseline set for valid indices only.");
     }
     // Aggregate tactile sensor values for thumb, index, middle, and palm, using only valid values and scaling
     float thumb_sum = 0.0f, index_sum = 0.0f, middle_sum = 0.0f, palm_sum = 0.0f;
@@ -303,7 +294,7 @@ private:
     for (const auto& press : msg->press_sensor_state) {
       // Thumb: indices 0, 1
       for (size_t idx : {0, 1}) {
-        if (idx < press.pressure.size() && press.pressure[idx] != 30000) {
+        if (idx < press.pressure.size() && press.pressure[idx] != 30000 && valid_tactile_indices_.size() > idx && valid_tactile_indices_[idx]) {
           float val = press.pressure[idx] / 10000.0f;
           if (tactile_baseline_.size() > idx) val -= tactile_baseline_[idx];
           thumb_sum += val;
@@ -312,7 +303,7 @@ private:
       }
       // Index: indices 4, 5
       for (size_t idx : {4, 5}) {
-        if (idx < press.pressure.size() && press.pressure[idx] != 30000) {
+        if (idx < press.pressure.size() && press.pressure[idx] != 30000 && valid_tactile_indices_.size() > idx && valid_tactile_indices_[idx]) {
           float val = press.pressure[idx] / 10000.0f;
           if (tactile_baseline_.size() > idx) val -= tactile_baseline_[idx];
           index_sum += val;
@@ -321,7 +312,7 @@ private:
       }
       // Middle: indices 2, 3
       for (size_t idx : {2, 3}) {
-        if (idx < press.pressure.size() && press.pressure[idx] != 30000) {
+        if (idx < press.pressure.size() && press.pressure[idx] != 30000 && valid_tactile_indices_.size() > idx && valid_tactile_indices_[idx]) {
           float val = press.pressure[idx] / 10000.0f;
           if (tactile_baseline_.size() > idx) val -= tactile_baseline_[idx];
           middle_sum += val;
@@ -330,7 +321,7 @@ private:
       }
       // Palm: indices 6, 7, 8
       for (size_t idx : {6, 7, 8}) {
-        if (idx < press.pressure.size() && press.pressure[idx] != 30000) {
+        if (idx < press.pressure.size() && press.pressure[idx] != 30000 && valid_tactile_indices_.size() > idx && valid_tactile_indices_[idx]) {
           float val = press.pressure[idx] / 10000.0f;
           if (tactile_baseline_.size() > idx) val -= tactile_baseline_[idx];
           palm_sum += val;
@@ -535,6 +526,7 @@ private:
 
   std::vector<float> current_positions_;
   std::vector<float> tactile_baseline_;
+  std::vector<bool> valid_tactile_indices_;
   bool tactile_calibration_needed_ = false;
 };
 
