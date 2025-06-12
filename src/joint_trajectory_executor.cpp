@@ -176,14 +176,14 @@ private:
     rclcpp::sleep_for(2s);  // Wait for the last command to take effect
 
     // After executing the trajectory, close the hand
-    hand_cmd.data = true; // Close hand command
-    hand_cmd_pub->publish(hand_cmd); // Close hand command
-    RCLCPP_INFO(this->get_logger(), "Hand closed after trajectory execution");
+    //hand_cmd.data = true; // Close hand command
+    //hand_cmd_pub->publish(hand_cmd); // Close hand command
+    //RCLCPP_INFO(this->get_logger(), "Hand closed after trajectory execution");
 
     // Final command to stop arm control
-    unitree_hg::msg::LowCmd final_cmd;
-    final_cmd.motor_cmd[JointIndex::kNotUsedJoint].q = 0.0f;
-    cmd_pub_->publish(final_cmd);
+    //unitree_hg::msg::LowCmd final_cmd;
+    //final_cmd.motor_cmd[JointIndex::kNotUsedJoint].q = 0.0f;
+    //cmd_pub_->publish(final_cmd);
 
     RCLCPP_INFO(this->get_logger(), "Trajectory execution complete.");
   }
