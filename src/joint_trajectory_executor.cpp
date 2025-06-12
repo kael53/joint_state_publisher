@@ -36,7 +36,10 @@ public:
   {
     RCLCPP_INFO(this->get_logger(), "Joint Trajectory Executor Node Initialized");
 
-    cmd_pub_ = this->create_publisher<unitree_hg::msg::LowCmd>("/arm_sdk", 10);
+    rclcpp::QoS qos_profile(10);
+    qos_profile.best_effort();
+
+    cmd_pub_ = this->create_publisher<unitree_hg::msg::LowCmd>("/arm_sdk", qos_profile);
     left_hand_pub_ = this->create_publisher<std_msgs::msg::Bool>("/dex3/left/command", 10);
     right_hand_pub_ = this->create_publisher<std_msgs::msg::Bool>("/dex3/right/command", 10);
 
@@ -93,6 +96,15 @@ public:
     }
   }
 
+  ~JointTrajectoryExecutor() override {
+    RCLCPP_INFO(this->get_logger(), "Shutting down Joint Trajectory Executor Node");
+
+    // Final command to stop arm control
+    unitree_hg::msg::LowCmd final_cmd;
+    final_cmd.motor_cmd[JointIndex::kNotUsedJoint].q = 0.0f;
+    cmd_pub_->publish(final_cmd);
+  }
+
 private:
   rclcpp::Publisher<unitree_hg::msg::LowCmd>::SharedPtr cmd_pub_;
   rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr left_hand_pub_;
@@ -135,6 +147,7 @@ private:
     for (size_t i = 0; i < msg->points.size(); ++i) {
       const auto& point = msg->points[i];
       unitree_hg::msg::LowCmd cmd_msg;
+
       cmd_msg.motor_cmd[JointIndex::kNotUsedJoint].q = 1.0f; // Full transition speed for trajectory following
       for (size_t j = 0; j < point.positions.size(); ++j) {
         auto target_joint_name = msg->joint_names[j];
@@ -142,11 +155,8 @@ private:
         auto target_position = point.positions[j];
 
         // Clamp using URDF joint limits if available
-        auto lim_it = joint_limits_.find(target_joint_name);
-        if (lim_it != joint_limits_.end()) {
-          const auto& lim = lim_it->second;
-          target_position = std::min(std::max(target_position, lim.lower), lim.upper);
-        }
+        auto lim = joint_limits_.at(target_joint_name);
+        target_position = std::min(std::max(target_position, lim.lower), lim.upper);
 
         cmd_msg.motor_cmd[target_index].q = target_position;
         cmd_msg.motor_cmd[target_index].dq = 0.f;

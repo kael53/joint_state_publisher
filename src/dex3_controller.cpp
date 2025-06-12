@@ -414,8 +414,8 @@ private:
 
       auto lim = joint_limits_.at(joint_name);
 
-      minLimits[target_index] = lim_it->second.lower;
-      maxLimits[target_index] = lim_it->second.upper;
+      minLimits[target_index] = lim.lower;
+      maxLimits[target_index] = lim.upper;
       RCLCPP_INFO(this->get_logger(), "Hand joint %s limits %zu: min = [%s], max = [%s]", joint_name.c_str(), target_index,
       std::to_string(minLimits[target_index]).c_str(), std::to_string(maxLimits[target_index]).c_str());
     }

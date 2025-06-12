@@ -34,7 +34,12 @@ def launch_setup(context, *args, **kwargs):
                 'selected_class_topic': selected_class_topic,
                 'planner_type': planner_type,
                 'collision_skip_pairs': collision_skip_pairs
-            }]
+            }],
+            arguments=[
+                '--ros-args',
+                '--log-level',
+                'trac_ik.ros.trac_ik:=DEBUG'
+            ]
         )
     ]
 
@@ -42,9 +47,9 @@ def generate_launch_description():
     args = [
         DeclareLaunchArgument('trajectory_time_step', default_value='0.05'),
         DeclareLaunchArgument('planning_timeout', default_value='1.0'),
-        DeclareLaunchArgument('base_link', default_value='pelvis'),
-        DeclareLaunchArgument('right_tip', default_value='right_hand_palm_link'),
-        DeclareLaunchArgument('left_tip', default_value='left_hand_palm_link'),
+        DeclareLaunchArgument('base_link', default_value='torso_link'),
+        DeclareLaunchArgument('right_tip', default_value='right_wrist_yaw_link'),
+        DeclareLaunchArgument('left_tip', default_value='left_wrist_yaw_link'),
         DeclareLaunchArgument('detection_topic', default_value='/detections'),
         DeclareLaunchArgument('selected_class_topic', default_value='/selected_detection_class'),
         DeclareLaunchArgument('planner_type', default_value='RRTConnect'),

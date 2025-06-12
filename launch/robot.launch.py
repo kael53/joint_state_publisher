@@ -27,6 +27,12 @@ def launch_setup(context, *args, **kwargs):
             output='screen',
             parameters=[{'robot_description': robot_description}]
         ),
+#        Node(
+#            package='joint_state_publisher_gui',
+#            executable='joint_state_publisher_gui',
+#            name='joint_state_publisher_gui',
+#            output='screen',
+#        ),
         Node(
             package='unitree_g1_dex3_stack',
             executable='joint_state_publisher',
