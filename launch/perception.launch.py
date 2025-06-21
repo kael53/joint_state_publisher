@@ -89,7 +89,7 @@ def launch_setup(context, *args, **kwargs):
         yolox_launch,
         project_to_3d_node,
         detection_to_goal_node,
-        realsense_launch_delayed
+        #realsense_launch_delayed
     ]
 
 def generate_launch_description():
