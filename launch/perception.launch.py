@@ -1,6 +1,6 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, OpaqueFunction
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, OpaqueFunction, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from ament_index_python.packages import get_package_share_directory
@@ -33,10 +33,8 @@ def launch_setup(context, *args, **kwargs):
             )
         ),
         launch_arguments={
-            'enable_color': 'true',
-            'enable_depth': 'true',
-            'align_depth.enable': 'true',
             'enable_sync': 'true',
+            'align_depth.enable': 'true',
         }.items()
     )
 
@@ -84,17 +82,20 @@ def launch_setup(context, *args, **kwargs):
         ]
     )
 
+    # Wait for other nodes to launch before realsense
+    realsense_launch_delayed = TimerAction(period=5.0, actions=[realsense_launch])
+
     return [
-        realsense_launch,
         yolox_launch,
         project_to_3d_node,
-        detection_to_goal_node
+        detection_to_goal_node,
+        realsense_launch_delayed
     ]
 
 def generate_launch_description():
     yolox_model_path_arg = DeclareLaunchArgument(
         'yolox_model_path',
-        default_value='./install/yolox_ros_cpp/share/yolox_ros_cpp/weights/tensorrt/yolox_s.trt',
+        default_value='./install/yolox_ros_cpp/share/yolox_ros_cpp/weights/tensorrt/yolox_nano.trt',
         description='Path to YOLOX TensorRT model file'
     )
     pointcloud_topic_arg = DeclareLaunchArgument(

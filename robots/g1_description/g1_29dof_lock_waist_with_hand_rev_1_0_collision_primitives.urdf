@@ -1,0 +1,1250 @@
+<robot name="g1_29dof_lock_waist_with_hand_rev_1_0">
+  <mujoco>
+    <compiler meshdir="meshes" discardvisual="false" />
+  </mujoco>
+
+  
+  
+
+  <link name="base_link" />
+  <joint name="base_to_pelvis" type="fixed">
+    <parent link="base_link" />
+    <child link="pelvis" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </joint>
+  <link name="pelvis">
+    <inertial>
+      <origin xyz="0 0 -0.07605" rpy="0 0 0" />
+      <mass value="3.813" />
+      <inertia ixx="0.010549" ixy="0" ixz="2.1E-06" iyy="0.0093089" iyz="0" izz="0.0079184" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/pelvis.STL" />
+      </geometry>
+      <material name="dark">
+        <color rgba="0.2 0.2 0.2 1" />
+      </material>
+    </visual>
+  </link>
+  <link name="pelvis_contour_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.001" />
+      <inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/pelvis_contour_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0012 0.0005 -0.1320" rpy="-0.1015 1.5410 -0.0989" /><geometry><box size="0.0400 0.0796 0.1102" /></geometry></collision><collision><origin xyz="0.0301 0.0000 -0.0542" rpy="-0.0000 -1.2566 -3.1416" /><geometry><cylinder radius="0.0714" length="0.0580" /></geometry></collision><collision><origin xyz="-0.0292 0.0005 -0.0723" rpy="1.5708 -0.0000 3.1214" /><geometry><box size="0.0581 0.0892 0.1356" /></geometry></collision></link>
+  <joint name="pelvis_contour_joint" type="fixed">
+    <parent link="pelvis" />
+    <child link="pelvis_contour_link" />
+  </joint>
+
+  
+  <link name="left_hip_pitch_link">
+    <inertial>
+      <origin xyz="0.002741 0.047791 -0.02606" rpy="0 0 0" />
+      <mass value="1.35" />
+      <inertia ixx="0.001811" ixy="3.68E-05" ixz="-3.44E-05" iyy="0.0014193" iyz="0.000171" izz="0.0012812" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_hip_pitch_link.STL" />
+      </geometry>
+      <material name="dark">
+        <color rgba="0.2 0.2 0.2 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="-0.0053 0.0234 -0.0091" rpy="0.1791 -0.2151 -1.6094" /><geometry><box size="0.0623 0.0700 0.0734" /></geometry></collision><collision><origin xyz="-0.0035 0.0758 -0.0202" rpy="0.2727 0.8214 -1.3601" /><geometry><box size="0.0487 0.0704 0.0777" /></geometry></collision><collision><origin xyz="0.0030 0.0426 -0.0563" rpy="0.2589 0.8234 -1.3790" /><geometry><box size="0.0510 0.0700 0.0784" /></geometry></collision></link>
+  <joint name="left_hip_pitch_joint" type="revolute">
+    <origin xyz="0 0.064452 -0.1027" rpy="0 0 0" />
+    <parent link="pelvis" />
+    <child link="left_hip_pitch_link" />
+    <axis xyz="0 1 0" />
+    <limit lower="-2.5307" upper="2.8798" effort="88" velocity="32" />
+  </joint>
+  <link name="left_hip_roll_link">
+    <inertial>
+      <origin xyz="0.029812 -0.001045 -0.087934" rpy="0 0 0" />
+      <mass value="1.52" />
+      <inertia ixx="0.0023773" ixy="-3.8E-06" ixz="-0.0003908" iyy="0.0024123" iyz="1.84E-05" izz="0.0016595" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_hip_roll_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0550 -0.0004 -0.0104" rpy="3.1401 -0.0454 -0.0129" /><geometry><box size="0.0452 0.0978 0.1152" /></geometry></collision><collision><origin xyz="0.0268 0.0240 -0.0818" rpy="1.5840 0.0060 1.5895" /><geometry><box size="0.0486 0.0856 0.1057" /></geometry></collision><collision><origin xyz="0.0275 -0.0248 -0.0808" rpy="1.5798 0.0035 1.5854" /><geometry><box size="0.0490 0.0871 0.1060" /></geometry></collision></link>
+  <joint name="left_hip_roll_joint" type="revolute">
+    <origin xyz="0 0.052 -0.030465" rpy="0 -0.1749 0" />
+    <parent link="left_hip_pitch_link" />
+    <child link="left_hip_roll_link" />
+    <axis xyz="1 0 0" />
+    <limit lower="-0.5236" upper="2.9671" effort="139" velocity="20" />
+  </joint>
+  <link name="left_hip_yaw_link">
+    <inertial>
+      <origin xyz="-0.057709 -0.010981 -0.15078" rpy="0 0 0" />
+      <mass value="1.702" />
+      <inertia ixx="0.0057774" ixy="-0.0005411" ixz="-0.0023948" iyy="0.0076124" iyz="-0.0007072" izz="0.003149" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_hip_yaw_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="-0.0311 -0.0016 -0.1203" rpy="0.4815 0.0710 1.6310" /><geometry><box size="0.0799 0.0875 0.1173" /></geometry></collision><collision><origin xyz="-0.0022 -0.0002 -0.0405" rpy="0.0610 1.5074 -3.1162" /><geometry><box size="0.0867 0.0871 0.1039" /></geometry></collision><collision><origin xyz="-0.0825 -0.0116 -0.1837" rpy="-2.2706 -0.0039 -1.4699" /><geometry><box size="0.0752 0.0827 0.1004" /></geometry></collision></link>
+  <joint name="left_hip_yaw_joint" type="revolute">
+    <origin xyz="0.025001 0 -0.12412" rpy="0 0 0" />
+    <parent link="left_hip_roll_link" />
+    <child link="left_hip_yaw_link" />
+    <axis xyz="0 0 1" />
+    <limit lower="-2.7576" upper="2.7576" effort="88" velocity="32" />
+  </joint>
+  <link name="left_knee_link">
+    <inertial>
+      <origin xyz="0.005457 0.003964 -0.12074" rpy="0 0 0" />
+      <mass value="1.932" />
+      <inertia ixx="0.011329" ixy="4.82E-05" ixz="-4.49E-05" iyy="0.011277" iyz="-0.0007146" izz="0.0015168" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_knee_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0109 -0.0001 -0.0256" rpy="3.1060 0.0061 -1.5592" /><geometry><box size="0.0715 0.1029 0.1302" /></geometry></collision><collision><origin xyz="0.0062 0.0032 -0.2505" rpy="3.0298 0.1447 -1.6515" /><geometry><box size="0.0606 0.0650 0.1271" /></geometry></collision><collision><origin xyz="0.0102 -0.0003 -0.1371" rpy="0.0314 0.0016 1.5603" /><geometry><box size="0.0717 0.0945 0.1088" /></geometry></collision></link>
+  <joint name="left_knee_joint" type="revolute">
+    <origin xyz="-0.078273 0.0021489 -0.17734" rpy="0 0.1749 0" />
+    <parent link="left_hip_yaw_link" />
+    <child link="left_knee_link" />
+    <axis xyz="0 1 0" />
+    <limit lower="-0.087267" upper="2.8798" effort="139" velocity="20" />
+  </joint>
+  <link name="left_ankle_pitch_link">
+    <inertial>
+      <origin xyz="-0.007269 0 0.011137" rpy="0 0 0" />
+      <mass value="0.074" />
+      <inertia ixx="8.4E-06" ixy="0" ixz="-2.9E-06" iyy="1.89E-05" iyz="0" izz="1.26E-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_ankle_pitch_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0022 0.0001 -0.0148" rpy="0.0000 0.0000 -1.5708" /><geometry><box size="0.0130 0.0186 0.0196" /></geometry></collision><collision><origin xyz="-0.0155 0.0001 -0.0118" rpy="0.0197 0.0000 1.5708" /><geometry><box size="0.0130 0.0181 0.0257" /></geometry></collision><collision><origin xyz="-0.0027 0.0001 0.0025" rpy="-1.7515 0.0000 1.5708" /><geometry><box size="0.0120 0.0197 0.0283" /></geometry></collision></link>
+  <joint name="left_ankle_pitch_joint" type="revolute">
+    <origin xyz="0 -9.4445E-05 -0.30001" rpy="0 0 0" />
+    <parent link="left_knee_link" />
+    <child link="left_ankle_pitch_link" />
+    <axis xyz="0 1 0" />
+    <limit lower="-0.87267" upper="0.5236" effort="35" velocity="30" />
+  </joint>
+  <link name="left_ankle_roll_link">
+    <inertial>
+      <origin xyz="0.026505 0 -0.016425" rpy="0 0 0" />
+      <mass value="0.608" />
+      <inertia ixx="0.0002231" ixy="2E-07" ixz="8.91E-05" iyy="0.0016161" iyz="-1E-07" izz="0.0016667" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_ankle_roll_link.STL" />
+      </geometry>
+      <material name="dark">
+        <color rgba="0.2 0.2 0.2 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.05 0.025 -0.03" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="-0.05 -0.025 -0.03" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.12 0.03 -0.03" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.12 -0.03 -0.03" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_ankle_roll_joint" type="revolute">
+    <origin xyz="0 0 -0.017558" rpy="0 0 0" />
+    <parent link="left_ankle_pitch_link" />
+    <child link="left_ankle_roll_link" />
+    <axis xyz="1 0 0" />
+    <limit lower="-0.2618" upper="0.2618" effort="35" velocity="30" />
+  </joint>
+  <link name="right_hip_pitch_link">
+    <inertial>
+      <origin xyz="0.002741 -0.047791 -0.02606" rpy="0 0 0" />
+      <mass value="1.35" />
+      <inertia ixx="0.001811" ixy="-3.68E-05" ixz="-3.44E-05" iyy="0.0014193" iyz="-0.000171" izz="0.0012812" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_hip_pitch_link.STL" />
+      </geometry>
+      <material name="dark">
+        <color rgba="0.2 0.2 0.2 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0029 -0.0450 -0.0552" rpy="-0.2892 0.9094 1.3394" /><geometry><box size="0.0534 0.0701 0.0801" /></geometry></collision><collision><origin xyz="-0.0052 -0.0233 -0.0096" rpy="2.9625 -0.2151 1.6094" /><geometry><box size="0.0624 0.0700 0.0744" /></geometry></collision><collision><origin xyz="-0.0042 -0.0752 -0.0186" rpy="2.7702 0.9242 1.2319" /><geometry><box size="0.0502 0.0720 0.0743" /></geometry></collision></link>
+  <joint name="right_hip_pitch_joint" type="revolute">
+    <origin xyz="0 -0.064452 -0.1027" rpy="0 0 0" />
+    <parent link="pelvis" />
+    <child link="right_hip_pitch_link" />
+    <axis xyz="0 1 0" />
+    <limit lower="-2.5307" upper="2.8798" effort="88" velocity="32" />
+  </joint>
+  <link name="right_hip_roll_link">
+    <inertial>
+      <origin xyz="0.029812 0.001045 -0.087934" rpy="0 0 0" />
+      <mass value="1.52" />
+      <inertia ixx="0.0023773" ixy="3.8E-06" ixz="-0.0003908" iyy="0.0024123" iyz="-1.84E-05" izz="0.0016595" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_hip_roll_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0278 -0.0235 -0.0811" rpy="1.5821 0.0002 1.5960" /><geometry><box size="0.0510 0.0866 0.1058" /></geometry></collision><collision><origin xyz="0.0545 0.0005 -0.0103" rpy="0.0159 0.0742 3.1361" /><geometry><box size="0.0442 0.0978 0.1148" /></geometry></collision><collision><origin xyz="0.0259 0.0241 -0.0821" rpy="1.5620 -0.0540 -1.5149" /><geometry><box size="0.0466 0.0871 0.1061" /></geometry></collision></link>
+  <joint name="right_hip_roll_joint" type="revolute">
+    <origin xyz="0 -0.052 -0.030465" rpy="0 -0.1749 0" />
+    <parent link="right_hip_pitch_link" />
+    <child link="right_hip_roll_link" />
+    <axis xyz="1 0 0" />
+    <limit lower="-2.9671" upper="0.5236" effort="139" velocity="20" />
+  </joint>
+  <link name="right_hip_yaw_link">
+    <inertial>
+      <origin xyz="-0.057709 0.010981 -0.15078" rpy="0 0 0" />
+      <mass value="1.702" />
+      <inertia ixx="0.0057774" ixy="0.0005411" ixz="-0.0023948" iyy="0.0076124" iyz="0.0007072" izz="0.003149" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_hip_yaw_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0213 -0.0002 -0.0618" rpy="3.1416 -0.0000 3.1128" /><geometry><box size="0.0617 0.0871 0.1235" /></geometry></collision><collision><origin xyz="-0.0618 0.0089 -0.1578" rpy="0.5935 -0.0566 1.3594" /><geometry><box size="0.0776 0.1040 0.1483" /></geometry></collision><collision><origin xyz="-0.0173 0.0002 -0.0587" rpy="3.1416 -0.0000 3.1416" /><geometry><cylinder radius="0.0432" length="0.1175" /></geometry></collision></link>
+  <joint name="right_hip_yaw_joint" type="revolute">
+    <origin xyz="0.025001 0 -0.12412" rpy="0 0 0" />
+    <parent link="right_hip_roll_link" />
+    <child link="right_hip_yaw_link" />
+    <axis xyz="0 0 1" />
+    <limit lower="-2.7576" upper="2.7576" effort="88" velocity="32" />
+  </joint>
+  <link name="right_knee_link">
+    <inertial>
+      <origin xyz="0.005457 -0.003964 -0.12074" rpy="0 0 0" />
+      <mass value="1.932" />
+      <inertia ixx="0.011329" ixy="-4.82E-05" ixz="4.49E-05" iyy="0.011277" iyz="0.0007146" izz="0.0015168" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_knee_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0109 -0.0004 -0.0252" rpy="-3.1022 -0.0031 1.5562" /><geometry><box size="0.0716 0.1029 0.1297" /></geometry></collision><collision><origin xyz="0.0093 0.0001 -0.1374" rpy="-3.0932 0.0028 1.5804" /><geometry><box size="0.0716 0.0944 0.1090" /></geometry></collision><collision><origin xyz="0.0069 0.0008 -0.2504" rpy="0.0978 -0.0082 1.5047" /><geometry><box size="0.0494 0.0643 0.1247" /></geometry></collision></link>
+  <joint name="right_knee_joint" type="revolute">
+    <origin xyz="-0.078273 -0.0021489 -0.17734" rpy="0 0.1749 0" />
+    <parent link="right_hip_yaw_link" />
+    <child link="right_knee_link" />
+    <axis xyz="0 1 0" />
+    <limit lower="-0.087267" upper="2.8798" effort="139" velocity="20" />
+  </joint>
+  <link name="right_ankle_pitch_link">
+    <inertial>
+      <origin xyz="-0.007269 0 0.011137" rpy="0 0 0" />
+      <mass value="0.074" />
+      <inertia ixx="8.4E-06" ixy="0" ixz="-2.9E-06" iyy="1.89E-05" iyz="0" izz="1.26E-05" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_ankle_pitch_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="-0.0026 -0.0000 0.0024" rpy="-1.7751 0.0007 1.5546" /><geometry><box size="0.0123 0.0196 0.0284" /></geometry></collision><collision><origin xyz="0.0023 -0.0001 -0.0146" rpy="-3.1416 0.0000 -1.5708" /><geometry><box size="0.0130 0.0184 0.0199" /></geometry></collision><collision><origin xyz="-0.0154 -0.0001 -0.0119" rpy="3.0931 0.0000 -1.5708" /><geometry><box size="0.0130 0.0183 0.0255" /></geometry></collision></link>
+  <joint name="right_ankle_pitch_joint" type="revolute">
+    <origin xyz="0 9.4445E-05 -0.30001" rpy="0 0 0" />
+    <parent link="right_knee_link" />
+    <child link="right_ankle_pitch_link" />
+    <axis xyz="0 1 0" />
+    <limit lower="-0.87267" upper="0.5236" effort="35" velocity="30" />
+  </joint>
+  <link name="right_ankle_roll_link">
+    <inertial>
+      <origin xyz="0.026505 0 -0.016425" rpy="0 0 0" />
+      <mass value="0.608" />
+      <inertia ixx="0.0002231" ixy="-2E-07" ixz="8.91E-05" iyy="0.0016161" iyz="1E-07" izz="0.0016667" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_ankle_roll_link.STL" />
+      </geometry>
+      <material name="dark">
+        <color rgba="0.2 0.2 0.2 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.05 0.025 -0.03" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="-0.05 -0.025 -0.03" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.12 0.03 -0.03" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.12 -0.03 -0.03" rpy="0 0 0" />
+      <geometry>
+        <sphere radius="0.005" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_ankle_roll_joint" type="revolute">
+    <origin xyz="0 0 -0.017558" rpy="0 0 0" />
+    <parent link="right_ankle_pitch_link" />
+    <child link="right_ankle_roll_link" />
+    <axis xyz="1 0 0" />
+    <limit lower="-0.2618" upper="0.2618" effort="35" velocity="30" />
+  </joint>
+
+  
+  <link name="waist_yaw_link">
+    <inertial>
+      <origin xyz="0.003494 0.000233 0.018034" rpy="0 0 0" />
+      <mass value="0.214" />
+      <inertia ixx="0.00010673" ixy="2.703E-06" ixz="-7.631E-06" iyy="0.00010422" iyz="-2.01E-07" izz="0.0001625" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/waist_yaw_link_rev_1_0.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="waist_yaw_joint" type="revolute">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="pelvis" />
+    <child link="waist_yaw_link" />
+    <axis xyz="0 0 1" />
+    <limit lower="-2.618" upper="2.618" effort="88" velocity="32" />
+  </joint>
+  <link name="waist_roll_link">
+    <inertial>
+      <origin xyz="0 2.3E-05 0" rpy="0 0 0" />
+      <mass value="0.086" />
+      <inertia ixx="7.079E-06" ixy="0" ixz="0" iyy="6.339E-06" iyz="0" izz="8.245E-06" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/waist_roll_link_rev_1_0.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="waist_roll_joint" type="fixed">
+    <origin xyz="-0.0039635 0 0.044" rpy="0 0 0" />
+    <parent link="waist_yaw_link" />
+    <child link="waist_roll_link" />
+    <axis xyz="1 0 0" />
+    <limit lower="-0.52" upper="0.52" effort="35" velocity="30" />
+  </joint>
+  <link name="torso_link">
+    <inertial>
+      <origin xyz="0.000931 0.000346 0.15082" rpy="0 0 0" />
+      <mass value="6.78" />
+      <inertia ixx="0.05905" ixy="3.3302E-05" ixz="-0.0017715" iyy="0.047014" iyz="-2.2399E-05" izz="0.025652" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/torso_link_rev_1_0.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0032 -0.0030 0.0692" rpy="1.6768 -0.0501 -3.1227" /><geometry><box size="0.1413 0.1499 0.1959" /></geometry></collision><collision><origin xyz="0.0092 0.0544 0.2091" rpy="0.0143 0.0907 1.5632" /><geometry><box size="0.1034 0.1505 0.1992" /></geometry></collision><collision><origin xyz="0.0068 -0.0525 0.2092" rpy="-3.0709 -0.1137 -1.5762" /><geometry><box size="0.1112 0.1487 0.2052" /></geometry></collision></link>
+  <joint name="waist_pitch_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="waist_roll_link" />
+    <child link="torso_link" />
+    <axis xyz="0 1 0" />
+    <limit lower="-0.52" upper="0.52" effort="35" velocity="30" />
+  </joint>
+
+  
+  <joint name="logo_joint" type="fixed">
+    <origin xyz="0.0039635 0 -0.044" rpy="0 0 0" />
+    <parent link="torso_link" />
+    <child link="logo_link" />
+  </joint>
+  <link name="logo_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.001" />
+      <inertia ixx="1e-7" ixy="0" ixz="0" iyy="1e-7" iyz="0" izz="1e-7" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/logo_link.STL" />
+      </geometry>
+      <material name="dark">
+        <color rgba="0.2 0.2 0.2 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="-0.0682 0.0002 0.2704" rpy="1.6358 0.0550 -0.0029" /><geometry><box size="0.0082 0.0287 0.1477" /></geometry></collision><collision><origin xyz="0.0694 0.0357 0.2712" rpy="1.5817 0.1948 -3.0361" /><geometry><box size="0.0067 0.0170 0.0682" /></geometry></collision><collision><origin xyz="0.0689 -0.0337 0.2731" rpy="-1.4615 0.2235 3.0310" /><geometry><box size="0.0069 0.0271 0.0690" /></geometry></collision></link>
+
+  
+  <link name="head_link">
+    <inertial>
+      <origin xyz="0.005267 0.000299 0.449869" rpy="0 0 0" />
+      <mass value="1.036" />
+      <inertia ixx="0.004085051" ixy="-2.543E-06" ixz="-6.9455E-05" iyy="0.004185212" iyz="-3.726E-06" izz="0.001807911" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/head_link.STL" />
+      </geometry>
+      <material name="dark">
+        <color rgba="0.2 0.2 0.2 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="-0.0261 -0.0042 0.4930" rpy="-1.3671 0.2857 0.0788" /><geometry><box size="0.0697 0.0941 0.1115" /></geometry></collision><collision><origin xyz="-0.0026 0.0003 0.3654" rpy="1.4460 -1.4867 0.1096" /><geometry><box size="0.0893 0.1065 0.1556" /></geometry></collision><collision><origin xyz="0.0338 0.0010 0.4649" rpy="3.1248 -0.2389 -3.1004" /><geometry><box size="0.0651 0.1123 0.1175" /></geometry></collision></link>
+  <joint name="head_joint" type="fixed">
+    <origin xyz="0.0039635 0 -0.044" rpy="0 0 0" />
+    <parent link="torso_link" />
+    <child link="head_link" />
+  </joint>
+
+
+  
+  <link name="imu_in_torso" />
+  <joint name="imu_in_torso_joint" type="fixed">
+    <origin xyz="-0.03959 -0.00224 0.14792" rpy="0 0 0" />
+    <parent link="torso_link" />
+    <child link="imu_in_torso" />
+  </joint>
+
+  <link name="imu_in_pelvis" />
+  <joint name="imu_in_pelvis_joint" type="fixed">
+    <origin xyz="0.04525 0 -0.08339" rpy="0 0 0" />
+    <parent link="pelvis" />
+    <child link="imu_in_pelvis" />
+  </joint>
+
+  
+  <link name="d435_link" />
+  <joint name="d435_joint" type="fixed">
+    <origin xyz="0.0576235 0.01753 0.42987" rpy="0 0.8307767239493009 0" />
+    <parent link="torso_link" />
+    <child link="d435_link" />
+  </joint>
+
+  
+  <link name="mid360_link" />
+  <joint name="mid360_joint" type="fixed">
+    <origin xyz="0.0002835 0.00003 0.41618" rpy="0 0.04014257279586953 0" />
+    <parent link="torso_link" />
+    <child link="mid360_link" />
+  </joint>
+
+  
+  <link name="left_shoulder_pitch_link">
+    <inertial>
+      <origin xyz="0 0.035892 -0.011628" rpy="0 0 0" />
+      <mass value="0.718" />
+      <inertia ixx="0.0004291" ixy="-9.2E-06" ixz="6.4E-06" iyy="0.000453" iyz="2.26E-05" izz="0.000423" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_shoulder_pitch_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0.04 -0.01" rpy="0 1.5707963267948966 0" />
+      <geometry>
+        <cylinder radius="0.03" length="0.05" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_shoulder_pitch_joint" type="revolute">
+    <origin xyz="0.0039563 0.10022 0.24778" rpy="0.27931 5.4949E-05 -0.00019159" />
+    <parent link="torso_link" />
+    <child link="left_shoulder_pitch_link" />
+    <axis xyz="0 1 0" />
+    <limit lower="-3.0892" upper="2.6704" effort="25" velocity="37" />
+  </joint>
+  <link name="left_shoulder_roll_link">
+    <inertial>
+      <origin xyz="-0.000227 0.00727 -0.063243" rpy="0 0 0" />
+      <mass value="0.643" />
+      <inertia ixx="0.0006177" ixy="-1E-06" ixz="8.7E-06" iyy="0.0006912" iyz="-5.3E-06" izz="0.0003894" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_shoulder_roll_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.004 0.006 -0.053" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="0.03" length="0.03" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_shoulder_roll_joint" type="revolute">
+    <origin xyz="0 0.038 -0.013831" rpy="-0.27925 0 0" />
+    <parent link="left_shoulder_pitch_link" />
+    <child link="left_shoulder_roll_link" />
+    <axis xyz="1 0 0" />
+    <limit lower="-1.5882" upper="2.2515" effort="25" velocity="37" />
+  </joint>
+  <link name="left_shoulder_yaw_link">
+    <inertial>
+      <origin xyz="0.010773 -0.002949 -0.072009" rpy="0 0 0" />
+      <mass value="0.734" />
+      <inertia ixx="0.0009988" ixy="7.9E-06" ixz="0.0001412" iyy="0.0010605" iyz="-2.86E-05" izz="0.0004354" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_shoulder_yaw_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0186 -0.0095 -0.0909" rpy="3.1416 -0.9399 -3.1416" /><geometry><box size="0.0456 0.0639 0.0729" /></geometry></collision><collision><origin xyz="-0.0005 0.0010 0.0029" rpy="3.1416 -0.0000 3.1416" /><geometry><cylinder radius="0.0339" length="0.0574" /></geometry></collision><collision><origin xyz="-0.0064 -0.0076 -0.0498" rpy="-2.0600 0.0732 1.5385" /><geometry><box size="0.0657 0.0681 0.0725" /></geometry></collision></link>
+  <joint name="left_shoulder_yaw_joint" type="revolute">
+    <origin xyz="0 0.00624 -0.1032" rpy="0 0 0" />
+    <parent link="left_shoulder_roll_link" />
+    <child link="left_shoulder_yaw_link" />
+    <axis xyz="0 0 1" />
+    <limit lower="-2.618" upper="2.618" effort="25" velocity="37" />
+  </joint>
+  <link name="left_elbow_link">
+    <inertial>
+      <origin xyz="0.064956 0.004454 -0.010062" rpy="0 0 0" />
+      <mass value="0.6" />
+      <inertia ixx="0.0002891" ixy="6.53E-05" ixz="1.72E-05" iyy="0.0004152" iyz="-5.6E-06" izz="0.0004197" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_elbow_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0703 -0.0072 0.0024" rpy="-3.0791 0.8779 1.6523" /><geometry><box size="0.0344 0.0613 0.0685" /></geometry></collision><collision><origin xyz="0.0651 0.0148 -0.0236" rpy="1.5751 0.8431 1.5735" /><geometry><box size="0.0379 0.0681 0.0699" /></geometry></collision><collision><origin xyz="0.0104 0.0273 -0.0046" rpy="1.5226 -0.0566 1.4040" /><geometry><box size="0.0250 0.0700 0.0779" /></geometry></collision></link>
+  <joint name="left_elbow_joint" type="revolute">
+    <origin xyz="0.015783 0 -0.080518" rpy="0 0 0" />
+    <parent link="left_shoulder_yaw_link" />
+    <child link="left_elbow_link" />
+    <axis xyz="0 1 0" />
+    <limit lower="-1.0472" upper="2.0944" effort="25" velocity="37" />
+  </joint>
+  <joint name="left_wrist_roll_joint" type="revolute">
+    <origin xyz="0.100 0.00188791 -0.010" rpy="0 0 0" />
+    <axis xyz="1 0 0" />
+    <parent link="left_elbow_link" />
+    <child link="left_wrist_roll_link" />
+    <limit effort="25" velocity="37" lower="-1.972222054" upper="1.972222054" />
+  </joint>
+  <link name="left_wrist_roll_link">
+    <inertial>
+      <origin xyz="0.01713944778 0.00053759094 0.00000048864" rpy="0 0 0" />
+      <mass value="0.08544498" />
+      <inertia ixx="0.00004821544023" ixy="-0.00000424511021" ixz="0.00000000510599" iyy="0.00003722899093" iyz="-0.00000000123525" izz="0.00005482106541" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_wrist_roll_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0333 -0.0263 0.0001" rpy="1.5734 0.0380 -1.5712" /><geometry><box size="0.0084 0.0364 0.0453" /></geometry></collision><collision><origin xyz="0.0280 0.0195 -0.0002" rpy="0.0000 -0.0065 1.5708" /><geometry><box size="0.0210 0.0559 0.0564" /></geometry></collision><collision><origin xyz="0.0076 -0.0083 -0.0001" rpy="-0.0086 0.0000 -3.1416" /><geometry><box size="0.0153 0.0443 0.0600" /></geometry></collision></link>
+  <joint name="left_wrist_pitch_joint" type="revolute">
+    <origin xyz="0.038 0 0" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <parent link="left_wrist_roll_link" />
+    <child link="left_wrist_pitch_link" />
+    <limit effort="5" velocity="22" lower="-1.614429558" upper="1.614429558" />
+  </joint>
+  <link name="left_wrist_pitch_link">
+    <inertial>
+      <origin xyz="0.02299989837 -0.00111685314 -0.00111658096" rpy="0 0 0" />
+      <mass value="0.48404956" />
+      <inertia ixx="0.00016579646273" ixy="-0.00001231206746" ixz="0.00001231699194" iyy="0.00042954057410" iyz="0.00000081417712" izz="0.00042953697654" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_wrist_pitch_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0016 -0.0011 0.0000" rpy="3.1416 -1.5677 -1.6096" /><geometry><cylinder radius="0.0307" length="0.0448" /></geometry></collision><collision><origin xyz="0.0456 -0.0145 -0.0007" rpy="1.5672 0.0201 -1.5792" /><geometry><box size="0.0286 0.0461 0.0577" /></geometry></collision><collision><origin xyz="0.0457 0.0143 -0.0005" rpy="-1.5717 0.0243 -1.5712" /><geometry><box size="0.0291 0.0462 0.0576" /></geometry></collision></link>
+  <joint name="left_wrist_yaw_joint" type="revolute">
+    <origin xyz="0.046 0 0" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <parent link="left_wrist_pitch_link" />
+    <child link="left_wrist_yaw_link" />
+    <limit effort="5" velocity="22" lower="-1.614429558" upper="1.614429558" />
+  </joint>
+  <link name="left_wrist_yaw_link">
+    <inertial>
+      <origin xyz="0.02200381568 0.00049485096 0.00053861123" rpy="0 0 0" />
+      <mass value="0.08457647" />
+      <inertia ixx="0.00004929128828" ixy="-0.00000045735494" ixz="0.00000445867591" iyy="0.00005973338134" iyz="0.00000043217198" izz="0.00003928083826" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_wrist_yaw_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0143 0.0010 -0.0193" rpy="3.1416 -0.0000 3.1416" /><geometry><cylinder radius="0.0323" length="0.0223" /></geometry></collision><collision><origin xyz="0.0326 0.0034 0.0044" rpy="1.2968 -0.0241 0.0166" /><geometry><box size="0.0187 0.0498 0.0559" /></geometry></collision><collision><origin xyz="0.0056 -0.0007 0.0253" rpy="1.6997 -1.5537 -1.7014" /><geometry><box size="0.0093 0.0378 0.0473" /></geometry></collision></link>
+  <joint name="left_hand_palm_joint" type="fixed">
+    <origin xyz="0.0415 0.003 0" rpy="0 0 0" />
+    <parent link="left_wrist_yaw_link" />
+    <child link="left_hand_palm_link" />
+  </joint>
+  <link name="left_hand_palm_link">
+    <inertial>
+      <origin xyz="0.06214634836 -0.00050869656 -0.00058171093" rpy="0 0 0" />
+      <mass value="0.37283854" />
+      <inertia ixx="0.00027535181027" ixy="-0.00001595519465" ixz="-0.00000242161890" iyy="0.00053951827219" iyz="-0.00000042279435" izz="0.00039623390907" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_hand_palm_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0200 0.0004 -0.0003" rpy="3.1374 0.0008 0.0139" /><geometry><box size="0.0406 0.0408 0.0692" /></geometry></collision><collision><origin xyz="0.0550 0.0007 0.0219" rpy="1.6047 -0.0066 -1.5541" /><geometry><box size="0.0415 0.0429 0.0643" /></geometry></collision><collision><origin xyz="0.0552 0.0006 -0.0219" rpy="1.5401 0.0003 1.5857" /><geometry><box size="0.0414 0.0447 0.0631" /></geometry></collision></link>
+  <joint name="left_hand_thumb_0_joint" type="revolute">
+    <origin xyz="0.0255 0 0" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <parent link="left_hand_palm_link" />
+    <child link="left_hand_thumb_0_link" />
+    <limit effort="2.45" velocity="3.14" lower="-1.04719755" upper="1.04719755" />
+  </joint>
+  <link name="left_hand_thumb_0_link">
+    <inertial>
+      <origin xyz="-0.00088424580 -0.00863407079 0.00094429336" rpy="0 0 0" />
+      <mass value="0.08623657" />
+      <inertia ixx="0.00001602919238" ixy="0.00000010683177" ixz="0.00000016728875" iyy="0.00001451795012" iyz="-0.00000051094752" izz="0.00001637877663" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_hand_thumb_0_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="-0.0057 -0.0099 0.0000" rpy="1.5708 -0.0000 -3.1416" /><geometry><box size="0.0115 0.0190 0.0197" /></geometry></collision><collision><origin xyz="0.0041 -0.0087 -0.0000" rpy="-3.1416 0.0000 -3.1416" /><geometry><box size="0.0119 0.0175 0.0190" /></geometry></collision><collision><origin xyz="-0.0007 -0.0210 0.0000" rpy="1.5732 -0.0001 1.5708" /><geometry><box size="0.0147 0.0191 0.0216" /></geometry></collision></link>
+  <joint name="left_hand_thumb_1_joint" type="revolute">
+    <origin xyz="-0.0025 -0.0193 0" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <parent link="left_hand_thumb_0_link" />
+    <child link="left_hand_thumb_1_link" />
+    <limit effort="1.4" velocity="12" lower="-0.61086523" upper="1.04719755" />
+  </joint>
+  <link name="left_hand_thumb_1_link">
+    <inertial>
+      <origin xyz="-0.00082788768 -0.03547435774 -0.00038089960" rpy="0 0 0" />
+      <mass value="0.05885070" />
+      <inertia ixx="0.00001274699945" ixy="-0.00000050770784" ixz="0.00000016088850" iyy="0.00000601573947" iyz="-0.00000027839003" izz="0.00001234543582" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_hand_thumb_1_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.001 -0.032 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.02 0.03 0.02" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="left_hand_thumb_2_joint" type="revolute">
+    <origin xyz="0 -0.0458 0" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <parent link="left_hand_thumb_1_link" />
+    <child link="left_hand_thumb_2_link" />
+    <limit effort="1.4" velocity="12" lower="0" upper="1.74532925" />
+  </joint>
+  <link name="left_hand_thumb_2_link">
+    <inertial>
+      <origin xyz="-0.00171735242 -0.02628192939 0.00010778879" rpy="0 0 0" />
+      <mass value="0.02030626" />
+      <inertia ixx="0.00000461267817" ixy="-0.00000003422130" ixz="-0.00000000823881" iyy="0.00000153561368" iyz="-0.00000002549885" izz="0.00000386625776" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_hand_thumb_2_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0010 -0.0383 0.0003" rpy="-1.5580 0.0096 -3.0531" /><geometry><box size="0.0171 0.0237 0.0265" /></geometry></collision><collision><origin xyz="-0.0007 -0.0116 -0.0070" rpy="0.0203 1.4775 -1.4849" /><geometry><box size="0.0138 0.0176 0.0348" /></geometry></collision><collision><origin xyz="-0.0004 -0.0107 0.0064" rpy="-1.6028 1.5708 0.0000" /><geometry><box size="0.0129 0.0175 0.0353" /></geometry></collision></link>
+  <joint name="left_hand_middle_0_joint" type="revolute">
+    <origin xyz="0.0777 0.0016 -0.0285" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <parent link="left_hand_palm_link" />
+    <child link="left_hand_middle_0_link" />
+    <limit effort="1.4" velocity="12" lower="-1.57079632" upper="0" />
+  </joint>
+  <link name="left_hand_middle_0_link">
+    <inertial>
+      <origin xyz="0.03547435774 0.00082788768 0.00038089960" rpy="0 0 0" />
+      <mass value="0.05885070" />
+      <inertia ixx="0.00000601573947" ixy="-0.00000050770784" ixz="-0.00000027839003" iyy="0.00001274699945" iyz="-0.00000016088850" izz="0.00001234543582" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_hand_middle_0_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0112 0.0028 0.0000" rpy="1.5136 0.0626 1.5669" /><geometry><box size="0.0213 0.0277 0.0352" /></geometry></collision><collision><origin xyz="0.0321 -0.0089 0.0003" rpy="-3.1237 -0.0263 -2.1833" /><geometry><box size="0.0213 0.0240 0.0262" /></geometry></collision><collision><origin xyz="0.0413 0.0018 0.0001" rpy="1.5708 -0.0000 -1.5708" /><geometry><box size="0.0216 0.0257 0.0271" /></geometry></collision></link>
+  <joint name="left_hand_middle_1_joint" type="revolute">
+    <origin xyz="0.0458 0 0" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <parent link="left_hand_middle_0_link" />
+    <child link="left_hand_middle_1_link" />
+    <limit effort="1.4" velocity="12" lower="-1.74532925" upper="0" />
+  </joint>
+  <link name="left_hand_middle_1_link">
+    <inertial>
+      <origin xyz="0.02628192939 0.00171735242 -0.00010778879" rpy="0 0 0" />
+      <mass value="0.02030626" />
+      <inertia ixx="0.00000153561368" ixy="0.00000003422130" ixz="-0.00000002549885" iyy="0.00000461267817" iyz="-0.00000000823881" izz="0.00000386625776" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_hand_middle_1_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0239 0.0002 0.0008" rpy="3.0437 0.0096 1.5897" /><geometry><box size="0.0177 0.0203 0.0266" /></geometry></collision><collision><origin xyz="0.0423 0.0008 -0.0004" rpy="-3.1269 -0.0217 1.6383" /><geometry><box size="0.0157 0.0197 0.0231" /></geometry></collision><collision><origin xyz="0.0051 0.0011 0.0000" rpy="3.1415 -0.0328 -1.5712" /><geometry><box size="0.0156 0.0242 0.0264" /></geometry></collision></link>
+  <joint name="left_hand_index_0_joint" type="revolute">
+    <origin xyz="0.0777 0.0016 0.0285" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <parent link="left_hand_palm_link" />
+    <child link="left_hand_index_0_link" />
+    <limit effort="1.4" velocity="12" lower="-1.57079632" upper="0" />
+  </joint>
+  <link name="left_hand_index_0_link">
+    <inertial>
+      <origin xyz="0.03547435774 0.00082788768 0.00038089960" rpy="0 0 0" />
+      <mass value="0.05885070" />
+      <inertia ixx="0.00000601573947" ixy="0.00000050770784" ixz="-0.00000027839003" iyy="0.00001274699945" iyz="-0.00000016088850" izz="0.00001234543582" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_hand_index_0_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0413 0.0018 0.0001" rpy="1.5708 -0.0000 -1.5708" /><geometry><box size="0.0215 0.0257 0.0270" /></geometry></collision><collision><origin xyz="0.0315 -0.0091 0.0001" rpy="-3.1416 0.0000 0.8780" /><geometry><box size="0.0209 0.0241 0.0257" /></geometry></collision><collision><origin xyz="0.0107 0.0020 0.0001" rpy="1.5708 -0.0000 -1.5708" /><geometry><box size="0.0212 0.0257 0.0354" /></geometry></collision></link>
+  <joint name="left_hand_index_1_joint" type="revolute">
+    <origin xyz="0.0458 0 0" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <parent link="left_hand_index_0_link" />
+    <child link="left_hand_index_1_link" />
+    <limit effort="1.4" velocity="12" lower="-1.74532925" upper="0" />
+  </joint>
+  <link name="left_hand_index_1_link">
+    <inertial>
+      <origin xyz="0.02628192939 0.00171735242 -0.00010778879" rpy="0 0 0" />
+      <mass value="0.02030626" />
+      <inertia ixx="0.00000153561368" ixy="0.00000003422130" ixz="-0.00000002549885" iyy="0.00000461267817" iyz="-0.00000000823881" izz="0.00000386625776" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/left_hand_index_1_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0116 0.0001 0.0070" rpy="0.0763 -1.4622 -0.0811" /><geometry><box size="0.0140 0.0176 0.0353" /></geometry></collision><collision><origin xyz="0.0385 -0.0002 -0.0008" rpy="1.4491 -0.0743 -1.5929" /><geometry><box size="0.0172 0.0239 0.0269" /></geometry></collision><collision><origin xyz="0.0107 0.0009 -0.0066" rpy="-1.5009 1.5395 1.5823" /><geometry><box size="0.0130 0.0175 0.0351" /></geometry></collision></link>
+  <link name="right_shoulder_pitch_link">
+    <inertial>
+      <origin xyz="0 -0.035892 -0.011628" rpy="0 0 0" />
+      <mass value="0.718" />
+      <inertia ixx="0.0004291" ixy="9.2E-06" ixz="6.4E-06" iyy="0.000453" iyz="-2.26E-05" izz="0.000423" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_shoulder_pitch_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.04 -0.01" rpy="0 1.5707963267948966 0" />
+      <geometry>
+        <cylinder radius="0.03" length="0.05" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_shoulder_pitch_joint" type="revolute">
+    <origin xyz="0.0039563 -0.10021 0.24778" rpy="-0.27931 5.4949E-05 0.00019159" />
+    <parent link="torso_link" />
+    <child link="right_shoulder_pitch_link" />
+    <axis xyz="0 1 0" />
+    <limit lower="-3.0892" upper="2.6704" effort="25" velocity="37" />
+  </joint>
+  <link name="right_shoulder_roll_link">
+    <inertial>
+      <origin xyz="-0.000227 -0.00727 -0.063243" rpy="0 0 0" />
+      <mass value="0.643" />
+      <inertia ixx="0.0006177" ixy="1E-06" ixz="8.7E-06" iyy="0.0006912" iyz="5.3E-06" izz="0.0003894" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_shoulder_roll_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.004 -0.006 -0.053" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="0.03" length="0.03" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_shoulder_roll_joint" type="revolute">
+    <origin xyz="0 -0.038 -0.013831" rpy="0.27925 0 0" />
+    <parent link="right_shoulder_pitch_link" />
+    <child link="right_shoulder_roll_link" />
+    <axis xyz="1 0 0" />
+    <limit lower="-2.2515" upper="1.5882" effort="25" velocity="37" />
+  </joint>
+  <link name="right_shoulder_yaw_link">
+    <inertial>
+      <origin xyz="0.010773 0.002949 -0.072009" rpy="0 0 0" />
+      <mass value="0.734" />
+      <inertia ixx="0.0009988" ixy="-7.9E-06" ixz="0.0001412" iyy="0.0010605" iyz="2.86E-05" izz="0.0004354" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_shoulder_yaw_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0176 0.0095 -0.0910" rpy="3.1416 0.9989 0.0000" /><geometry><box size="0.0461 0.0639 0.0735" /></geometry></collision><collision><origin xyz="0.0018 0.0084 -0.0567" rpy="-3.1103 0.1024 -1.5157" /><geometry><box size="0.0653 0.0679 0.0711" /></geometry></collision><collision><origin xyz="-0.0005 -0.0010 0.0034" rpy="3.1416 -0.0000 1.8850" /><geometry><cylinder radius="0.0339" length="0.0563" /></geometry></collision></link>
+  <joint name="right_shoulder_yaw_joint" type="revolute">
+    <origin xyz="0 -0.00624 -0.1032" rpy="0 0 0" />
+    <parent link="right_shoulder_roll_link" />
+    <child link="right_shoulder_yaw_link" />
+    <axis xyz="0 0 1" />
+    <limit lower="-2.618" upper="2.618" effort="25" velocity="37" />
+  </joint>
+  <link name="right_elbow_link">
+    <inertial>
+      <origin xyz="0.064956 -0.004454 -0.010062" rpy="0 0 0" />
+      <mass value="0.6" />
+      <inertia ixx="0.0002891" ixy="-6.53E-05" ixz="1.72E-05" iyy="0.0004152" iyz="5.6E-06" izz="0.0004197" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_elbow_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0788 0.0008 -0.0097" rpy="2.1888 0.0147 -3.1283" /><geometry><box size="0.0432 0.0625 0.0627" /></geometry></collision><collision><origin xyz="0.0006 -0.0276 -0.0002" rpy="1.2912 -0.0002 -1.5714" /><geometry><box size="0.0143 0.0596 0.0609" /></geometry></collision><collision><origin xyz="0.0494 -0.0025 -0.0105" rpy="2.8012 0.1018 -0.0115" /><geometry><box size="0.0531 0.0673 0.0723" /></geometry></collision></link>
+  <joint name="right_elbow_joint" type="revolute">
+    <origin xyz="0.015783 0 -0.080518" rpy="0 0 0" />
+    <parent link="right_shoulder_yaw_link" />
+    <child link="right_elbow_link" />
+    <axis xyz="0 1 0" />
+    <limit lower="-1.0472" upper="2.0944" effort="25" velocity="37" />
+  </joint>
+  <joint name="right_wrist_roll_joint" type="revolute">
+    <origin xyz="0.100 -0.00188791 -0.010" rpy="0 0 0" />
+    <axis xyz="1 0 0" />
+    <parent link="right_elbow_link" />
+    <child link="right_wrist_roll_link" />
+    <limit effort="25" velocity="37" lower="-1.972222054" upper="1.972222054" />
+  </joint>
+  <link name="right_wrist_roll_link">
+    <inertial>
+      <origin xyz="0.01713944778 -0.00053759094 0.00000048864" rpy="0 0 0" />
+      <mass value="0.08544498" />
+      <inertia ixx="0.00004821544023" ixy="0.00000424511021" ixz="0.00000000510599" iyy="0.00003722899093" iyz="0.00000000123525" izz="0.00005482106541" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_wrist_roll_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0280 -0.0178 0.0090" rpy="1.5708 -0.4877 -1.5708" /><geometry><box size="0.0201 0.0537 0.0559" /></geometry></collision><collision><origin xyz="0.0280 0.0186 0.0091" rpy="-1.5708 0.4958 -1.5708" /><geometry><box size="0.0196 0.0538 0.0560" /></geometry></collision><collision><origin xyz="0.0068 -0.0011 -0.0111" rpy="2.4030 -0.0330 3.1040" /><geometry><box size="0.0157 0.0438 0.0457" /></geometry></collision></link>
+  <joint name="right_wrist_pitch_joint" type="revolute">
+    <origin xyz="0.038 0 0" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <parent link="right_wrist_roll_link" />
+    <child link="right_wrist_pitch_link" />
+    <limit effort="5" velocity="22" lower="-1.614429558" upper="1.614429558" />
+  </joint>
+  <link name="right_wrist_pitch_link">
+    <inertial>
+      <origin xyz="0.02299989837 0.00111685314 -0.00111658096" rpy="0 0 0" />
+      <mass value="0.48404956" />
+      <inertia ixx="0.00016579646273" ixy="0.00001231206746" ixz="0.00001231699194" iyy="0.00042954057410" iyz="-0.00000081417712" izz="0.00042953697654" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_wrist_pitch_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0441 0.0008 -0.0011" rpy="3.1416 -0.0000 2.5133" /><geometry><cylinder radius="0.0306" length="0.0431" /></geometry></collision><collision><origin xyz="0.0025 -0.0004 0.0141" rpy="0.1565 1.2938 -2.9789" /><geometry><box size="0.0302 0.0483 0.0542" /></geometry></collision><collision><origin xyz="-0.0020 0.0008 -0.0139" rpy="3.0079 1.3229 3.0037" /><geometry><box size="0.0303 0.0449 0.0599" /></geometry></collision></link>
+  <joint name="right_wrist_yaw_joint" type="revolute">
+    <origin xyz="0.046 0 0" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <parent link="right_wrist_pitch_link" />
+    <child link="right_wrist_yaw_link" />
+    <limit effort="5" velocity="22" lower="-1.614429558" upper="1.614429558" />
+  </joint>
+  <link name="right_wrist_yaw_link">
+    <inertial>
+      <origin xyz="0.02200381568 -0.00049485096 0.00053861123" rpy="0 0 0" />
+      <mass value="0.08457647" />
+      <inertia ixx="0.00004929128828" ixy="0.00000045735494" ixz="0.00000445867591" iyy="0.00005973338134" iyz="0.00000043217198" izz="0.00003928083826" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_wrist_yaw_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0118 -0.0002 -0.0205" rpy="1.5916 1.4917 1.5700" /><geometry><box size="0.0202 0.0498 0.0596" /></geometry></collision><collision><origin xyz="0.0343 -0.0032 0.0055" rpy="-1.5826 0.0758 3.0923" /><geometry><box size="0.0170 0.0494 0.0540" /></geometry></collision><collision><origin xyz="0.0062 0.0004 0.0254" rpy="1.7491 -1.5552 1.4159" /><geometry><box size="0.0093 0.0384 0.0483" /></geometry></collision></link>
+  <joint name="right_hand_palm_joint" type="fixed">
+    <origin xyz="0.0415 -0.003 0" rpy="0 0 0" />
+    <parent link="right_wrist_yaw_link" />
+    <child link="right_hand_palm_link" />
+  </joint>
+  <link name="right_hand_palm_link">
+    <inertial>
+      <origin xyz="0.06214634836 0.00050869656 -0.00058171093" rpy="0 0 0" />
+      <mass value="0.37283854" />
+      <inertia ixx="0.00027535181027" ixy="0.00001595519465" ixz="-0.00000242161890" iyy="0.00053951827219" iyz="-0.00000042279435" izz="0.00039623390907" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_hand_palm_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0549 -0.0005 -0.0220" rpy="1.5495 0.0085 -1.5864" /><geometry><box size="0.0414 0.0432 0.0643" /></geometry></collision><collision><origin xyz="0.0554 -0.0006 0.0217" rpy="-1.5840 0.0002 -1.5694" /><geometry><box size="0.0416 0.0446 0.0626" /></geometry></collision><collision><origin xyz="0.0201 -0.0004 0.0003" rpy="3.1180 -0.0024 3.1333" /><geometry><box size="0.0405 0.0416 0.0686" /></geometry></collision></link>
+  <joint name="right_hand_thumb_0_joint" type="revolute">
+    <origin xyz="0.0255 0 0" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <parent link="right_hand_palm_link" />
+    <child link="right_hand_thumb_0_link" />
+    <limit effort="2.45" velocity="3.14" lower="-1.04719755" upper="1.04719755" />
+  </joint>
+  <link name="right_hand_thumb_0_link">
+    <inertial>
+      <origin xyz="-0.00088424580 0.00863407079 0.00094429336" rpy="0 0 0" />
+      <mass value="0.08623657" />
+      <inertia ixx="0.00001602919238" ixy="-0.00000010683177" ixz="0.00000016728875" iyy="0.00001451795012" iyz="0.00000051094752" izz="0.00001637877663" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_hand_thumb_0_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="-0.0057 0.0182 -0.0000" rpy="-1.5708 -0.0000 -3.1331" /><geometry><box size="0.0119 0.0190 0.0201" /></geometry></collision><collision><origin xyz="-0.0007 0.0066 0.0000" rpy="1.5708 -0.0000 -1.5708" /><geometry><box size="0.0133 0.0190 0.0216" /></geometry></collision><collision><origin xyz="0.0042 0.0189 -0.0000" rpy="-3.1416 0.0000 -3.1416" /><geometry><box size="0.0118 0.0188 0.0190" /></geometry></collision></link>
+  <joint name="right_hand_thumb_1_joint" type="revolute">
+    <origin xyz="-0.0025 0.0193 0" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <parent link="right_hand_thumb_0_link" />
+    <child link="right_hand_thumb_1_link" />
+    <limit effort="1.4" velocity="12" lower="-1.04719755" upper="0.61086523" />
+  </joint>
+  <link name="right_hand_thumb_1_link">
+    <inertial>
+      <origin xyz="-0.00082788768 0.03547435774 -0.00038089960" rpy="0 0 0" />
+      <mass value="0.05885070" />
+      <inertia ixx="0.00001274699945" ixy="0.00000050770784" ixz="0.00000016088850" iyy="0.00000601573947" iyz="0.00000027839003" izz="0.00001234543582" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_hand_thumb_1_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.001 0.032 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.02 0.03 0.02" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="right_hand_thumb_2_joint" type="revolute">
+    <origin xyz="0 0.0458 0" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <parent link="right_hand_thumb_1_link" />
+    <child link="right_hand_thumb_2_link" />
+    <limit effort="1.4" velocity="12" lower="-1.74532925" upper="0" />
+  </joint>
+  <link name="right_hand_thumb_2_link">
+    <inertial>
+      <origin xyz="-0.00171735242 0.02628192939 0.00010778879" rpy="0 0 0" />
+      <mass value="0.02030626" />
+      <inertia ixx="0.00000461267817" ixy="0.00000003422130" ixz="-0.00000000823881" iyy="0.00000153561368" iyz="0.00000002549885" izz="0.00000386625776" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_hand_thumb_2_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0015 0.0373 0.0006" rpy="1.4768 0.0032 2.9851" /><geometry><box size="0.0176 0.0235 0.0277" /></geometry></collision><collision><origin xyz="-0.0005 0.0115 0.0072" rpy="0.0168 1.4409 -1.5960" /><geometry><box size="0.0139 0.0175 0.0352" /></geometry></collision><collision><origin xyz="-0.0010 0.0107 -0.0063" rpy="1.6552 1.5688 -3.1342" /><geometry><box size="0.0133 0.0175 0.0351" /></geometry></collision></link>
+  <joint name="right_hand_middle_0_joint" type="revolute">
+    <origin xyz="0.0777 -0.0016 -0.0285" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <parent link="right_hand_palm_link" />
+    <child link="right_hand_middle_0_link" />
+    <limit effort="1.4" velocity="12" lower="0" upper="1.57079632" />
+  </joint>
+  <link name="right_hand_middle_0_link">
+    <inertial>
+      <origin xyz="0.03547435774 -0.00082788768 0.00038089960" rpy="0 0 0" />
+      <mass value="0.05885070" />
+      <inertia ixx="0.00000601573947" ixy="0.00000050770784" ixz="-0.00000027839003" iyy="0.00001274699945" iyz="-0.00000016088850" izz="0.00001234543582" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_hand_middle_0_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0107 -0.0025 -0.0001" rpy="1.5708 -0.0000 1.5708" /><geometry><box size="0.0202 0.0257 0.0355" /></geometry></collision><collision><origin xyz="0.0413 -0.0018 -0.0001" rpy="1.5708 -0.0000 -1.5708" /><geometry><box size="0.0216 0.0257 0.0270" /></geometry></collision><collision><origin xyz="0.0318 0.0090 -0.0001" rpy="-3.1416 0.0000 2.1946" /><geometry><box size="0.0207 0.0240 0.0257" /></geometry></collision></link>
+  <joint name="right_hand_middle_1_joint" type="revolute">
+    <origin xyz="0.0458 0 0" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <parent link="right_hand_middle_0_link" />
+    <child link="right_hand_middle_1_link" />
+    <limit effort="1.4" velocity="12" lower="0" upper="1.74532925" />
+  </joint>
+  <link name="right_hand_middle_1_link">
+    <inertial>
+      <origin xyz="0.02628192939 -0.00171735242 -0.00010778879" rpy="0 0 0" />
+      <mass value="0.02030626" />
+      <inertia ixx="0.00000153561368" ixy="0.00000003422130" ixz="-0.00000002549885" iyy="0.00000461267817" iyz="-0.00000000823881" izz="0.00000386625776" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_hand_middle_1_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0384 0.0004 0.0011" rpy="-1.4778 0.0236 -1.5392" /><geometry><box size="0.0172 0.0238 0.0271" /></geometry></collision><collision><origin xyz="0.0113 -0.0001 -0.0072" rpy="3.1048 -1.4292 -3.1000" /><geometry><box size="0.0142 0.0176 0.0349" /></geometry></collision><collision><origin xyz="0.0106 -0.0009 0.0067" rpy="-1.7654 1.5144 1.4269" /><geometry><box size="0.0131 0.0175 0.0350" /></geometry></collision></link>
+  <joint name="right_hand_index_0_joint" type="revolute">
+    <origin xyz="0.0777 -0.0016 0.0285" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <parent link="right_hand_palm_link" />
+    <child link="right_hand_index_0_link" />
+    <limit effort="1.4" velocity="12" lower="0" upper="1.57079632" />
+  </joint>
+  <link name="right_hand_index_0_link">
+    <inertial>
+      <origin xyz="0.03547435774 -0.00082788768 0.00038089960" rpy="0 0 0" />
+      <mass value="0.05885070" />
+      <inertia ixx="0.00000601573947" ixy="0.00000050770784" ixz="-0.00000027839003" iyy="0.00001274699945" iyz="-0.00000016088850" izz="0.00001234543582" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_hand_index_0_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0324 0.0061 -0.0001" rpy="3.1416 -0.0000 0.0000" /><geometry><cylinder radius="0.0140" length="0.0257" /></geometry></collision><collision><origin xyz="0.0412 -0.0018 -0.0001" rpy="1.5708 -0.0000 -1.5708" /><geometry><box size="0.0216 0.0257 0.0272" /></geometry></collision><collision><origin xyz="0.0105 -0.0029 -0.0001" rpy="-1.5698 0.0027 -1.5446" /><geometry><box size="0.0203 0.0257 0.0349" /></geometry></collision></link>
+  <joint name="right_hand_index_1_joint" type="revolute">
+    <origin xyz="0.0458 0 0" rpy="0 0 0" />
+    <axis xyz="0 0 1" />
+    <parent link="right_hand_index_0_link" />
+    <child link="right_hand_index_1_link" />
+    <limit effort="1.4" velocity="12" lower="0" upper="1.74532925" />
+  </joint>
+  <link name="right_hand_index_1_link">
+    <inertial>
+      <origin xyz="0.02628192939 -0.00171735242 -0.00010778879" rpy="0 0 0" />
+      <mass value="0.02030626" />
+      <inertia ixx="0.00000153561368" ixy="0.00000003422130" ixz="-0.00000002549885" iyy="0.00000461267817" iyz="-0.00000000823881" izz="0.00000386625776" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://unitree_g1_dex3_stack/robots/g1_description/meshes/right_hand_index_1_link.STL" />
+      </geometry>
+      <material name="white">
+        <color rgba="0.7 0.7 0.7 1" />
+      </material>
+    </visual>
+    <collision><origin xyz="0.0115 -0.0005 -0.0069" rpy="0.1578 1.4863 0.2107" /><geometry><box size="0.0138 0.0175 0.0347" /></geometry></collision><collision><origin xyz="0.0384 0.0007 0.0007" rpy="1.4950 0.0152 1.6279" /><geometry><box size="0.0172 0.0237 0.0267" /></geometry></collision><collision><origin xyz="0.0108 -0.0010 0.0067" rpy="1.5205 1.5131 1.5711" /><geometry><box size="0.0131 0.0175 0.0353" /></geometry></collision></link>
+</robot>
