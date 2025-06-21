@@ -1,5 +1,6 @@
 from launch import LaunchDescription
-from launch_ros.actions import Node
+from launch_ros.actions import Node, ComposableNodeContainer
+from launch_ros.descriptions import ComposableNode
 from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, OpaqueFunction, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
@@ -38,7 +39,13 @@ def launch_setup(context, *args, **kwargs):
         }.items()
     )
 
-    yolox_launch = Node(
+    yolox_node = ComposableNodeContainer(
+        name='yolox_container',
+        namespace='',
+        package='rclcpp_components',
+        executable='component_container',
+        composable_node_descriptions=[
+        ComposableNode(
         package='yolox_ros_cpp',
         plugin='yolox_ros_cpp::YoloXNode',
         name='yolox_ros_cpp',
@@ -56,7 +63,8 @@ def launch_setup(context, *args, **kwargs):
             "src_image_topic_name": '/camera/color/image_raw',
             "publish_image_topic_name": '/yolox/image_raw',
             "publish_boundingbox_topic_name": '/yolox/bounding_boxes',
-        }],
+        }])
+        ],
         output='screen',
     )
 
@@ -82,18 +90,18 @@ def launch_setup(context, *args, **kwargs):
         executable='detection_to_goal_node',
         name='detection_to_goal_node',
         output='screen',
-        remappings=[
-            ('detections', detection3d_topic),
-            ('detection_selection', '/detection_selection'),
-            ('goal_pose', '/goal_pose'),
-        ]
+        parameters=[{
+            'detections': detection3d_topic,
+            'detection_selection': '/detection_selection',
+            'goal_pose': '/goal_pose',
+        }]
     )
 
     # Wait for other nodes to launch before realsense
     realsense_launch_delayed = TimerAction(period=5.0, actions=[realsense_launch])
 
     return [
-        yolox_launch,
+        yolox_node,
         project_to_3d_node,
         detection_to_goal_node,
         #realsense_launch_delayed
