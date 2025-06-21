@@ -51,7 +51,7 @@ def launch_setup(context, *args, **kwargs):
         name='yolox_ros_cpp',
         parameters=[{
             "model_path": yolox_model_path,
-            "p6": 'false',
+            "p6": False,
             "class_labels_path": '',
             "num_classes": 80,
             "model_type": "tensorrt",
@@ -59,7 +59,7 @@ def launch_setup(context, *args, **kwargs):
             "tensorrt/device": 0,
             "conf": 0.3,
             "nms": 0.45,
-            "imshow_isshow": 'false',
+            "imshow_isshow": False,
             "src_image_topic_name": '/camera/color/image_raw',
             "publish_image_topic_name": '/yolox/image_raw',
             "publish_boundingbox_topic_name": '/yolox/bounding_boxes',
