@@ -151,7 +151,8 @@ private:
     std_msgs::msg::Bool hand_cmd;
     hand_cmd.data = false; // Open hand command
     hand_cmd_pub->publish(hand_cmd); // Open hand command
-
+    // Wait for the hand to open
+    rclcpp::sleep_for(1s);  // Wait for the hand to open
     RCLCPP_INFO(this->get_logger(), "Hand opened fully, starting trajectory execution");
 
     auto start_time = this->now();
@@ -200,15 +201,23 @@ private:
     // After executing the trajectory, close the hand
     hand_cmd.data = true; // Close hand command
     hand_cmd_pub->publish(hand_cmd); // Close hand command
+    // Wait for the hand to close
+    rclcpp::sleep_for(1s);  // Wait for the hand to close
     RCLCPP_INFO(this->get_logger(), "Hand closed after trajectory execution");
 
-    // Final command to stop arm control
-    unitree_hg::msg::LowCmd final_cmd;
-    final_cmd.motor_cmd[JointIndex::kNotUsedJoint].q = 0.0f;
-    cmd_pub_->publish(final_cmd);
-
     RCLCPP_INFO(this->get_logger(), "Trajectory execution complete, returning to default pose.");
-    rclcpp::sleep_for(5s);  // Wait for the last command to take effect
+
+    // Smoothly interpolate final_cmd.motor_cmd[JointIndex::kNotUsedJoint].q from 1.0 to 0.0
+    const double interp_duration = 1.0; // seconds
+    const int interp_steps = 50;
+    for (int step = 0; step <= interp_steps; ++step) {
+      double t = static_cast<double>(step) / interp_steps;
+      double value = (1.0 - t) * 1.0 + t * 0.0; // Linear interpolation
+      unitree_hg::msg::LowCmd final_cmd;
+      final_cmd.motor_cmd[JointIndex::kNotUsedJoint].q = static_cast<float>(value);
+      cmd_pub_->publish(final_cmd);
+      rclcpp::sleep_for(std::chrono::duration<double>(interp_duration / interp_steps));
+    }
   }
 };
 
