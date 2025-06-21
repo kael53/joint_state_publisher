@@ -54,6 +54,7 @@ add_executable(dex3_controller src/dex3_controller.cpp)
 add_executable(joint_trajectory_executor src/joint_trajectory_executor.cpp)
 add_executable(ik_fcl_ompl_planner src/ik_fcl_ompl_planner.cpp)
 add_executable(project_to_3d_node src/project_to_3d_node.cpp)
+add_executable(detection_to_goal_node src/detection_to_goal_node.cpp)
 
 ament_target_dependencies(joint_state_publisher
   rclcpp unitree_hg sensor_msgs geometry_msgs std_msgs urdf kdl_parser
@@ -67,9 +68,11 @@ ament_target_dependencies(joint_trajectory_executor
 ament_target_dependencies(ik_fcl_ompl_planner
   rclcpp sensor_msgs geometry_msgs std_msgs trajectory_msgs urdf kdl_parser trac_ik_lib ompl fcl geometric_shapes resource_retriever vision_msgs ament_index_cpp
 )
-
 ament_target_dependencies(project_to_3d_node
   rclcpp vision_msgs bboxes_ex_msgs sensor_msgs geometry_msgs std_msgs cv_bridge image_transport message_filters pcl_conversions
+)
+ament_target_dependencies(detection_to_goal_node
+  rclcpp vision_msgs bboxes_ex_msgs sensor_msgs geometry_msgs std_msgs
 )
 
 target_link_libraries(ik_fcl_ompl_planner
@@ -89,6 +92,7 @@ install(TARGETS
   joint_trajectory_executor
   ik_fcl_ompl_planner
   project_to_3d_node
+  detection_to_goal_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
