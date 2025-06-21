@@ -27,8 +27,8 @@ private:
       if (detection.results.empty()) continue;
       if (detection.results[0].id == selected_id_) {
         geometry_msgs::msg::PoseStamped goal_pose;
-        goal_pose.header = detection.bbox.center.header;
-        goal_pose.pose = detection.bbox.center.pose;
+        goal_pose.header = detection.header;
+        goal_pose.pose = detection.bbox.center;
         goal_pub_->publish(goal_pose);
         RCLCPP_INFO(this->get_logger(), "Published goal pose for id: %s", selected_id_.c_str());
         break;
