@@ -38,19 +38,26 @@ def launch_setup(context, *args, **kwargs):
         }.items()
     )
 
-    yolox_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory('yolox_ros_cpp'),
-                'launch',
-                'yolox_tensorrt_jetson.launch.py'
-            )
-        ),
-        launch_arguments={
-            'imshow_isshow': 'false',
-            'src_image_topic_name': '/camera/color/image_raw',
-            'model_path': yolox_model_path,
-        }.items()
+    yolox_launch = Node(
+        package='yolox_ros_cpp',
+        plugin='yolox_ros_cpp::YoloXNode',
+        name='yolox_ros_cpp',
+        parameters=[{
+            "model_path": yolox_model_path,
+            "p6": 'false',
+            "class_labels_path": '',
+            "num_classes": 80,
+            "model_type": "tensorrt",
+            "model_version": "0.1.1rc0",
+            "tensorrt/device": 0,
+            "conf": 0.3,
+            "nms": 0.45,
+            "imshow_isshow": 'false',
+            "src_image_topic_name": '/camera/color/image_raw',
+            "publish_image_topic_name": '/yolox/image_raw',
+            "publish_boundingbox_topic_name": '/yolox/bounding_boxes',
+        }],
+        output='screen',
     )
 
     project_to_3d_node = Node(
