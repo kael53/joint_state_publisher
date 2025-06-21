@@ -10,7 +10,7 @@ class DetectionToGoalNode : public rclcpp::Node {
 public:
   DetectionToGoalNode() : Node("detection_to_goal_node") {
     detection_sub_ = this->create_subscription<vision_msgs::msg::Detection3DArray>(
-      "detections", 10, std::bind(&DetectionToGoalNode::detection_callback, this, _1));
+      "detections_3d", 10, std::bind(&DetectionToGoalNode::detection_callback, this, _1));
     selection_sub_ = this->create_subscription<std_msgs::msg::String>(
       "detection_selection", 10, std::bind(&DetectionToGoalNode::selection_callback, this, _1));
     goal_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>(

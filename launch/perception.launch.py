@@ -72,10 +72,23 @@ def launch_setup(context, *args, **kwargs):
         }]
     )
 
+    detection_to_goal_node = Node(
+        package='unitree_g1_dex3_stack',
+        executable='detection_to_goal_node',
+        name='detection_to_goal_node',
+        output='screen',
+        remappings=[
+            ('detections', detection3d_topic),
+            ('detection_selection', '/detection_selection'),
+            ('goal_pose', '/goal_pose'),
+        ]
+    )
+
     return [
         realsense_launch,
         yolox_launch,
-        project_to_3d_node
+        project_to_3d_node,
+        detection_to_goal_node
     ]
 
 def generate_launch_description():
