@@ -102,8 +102,8 @@ def launch_setup(context, *args, **kwargs):
 
     return [
         yolox_node,
-        project_to_3d_node,
-        detection_to_goal_node,
+        #project_to_3d_node,
+        #detection_to_goal_node,
         #realsense_launch_delayed
     ]
 
