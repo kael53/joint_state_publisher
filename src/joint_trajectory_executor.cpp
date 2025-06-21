@@ -210,13 +210,14 @@ private:
     // Smoothly interpolate final_cmd.motor_cmd[JointIndex::kNotUsedJoint].q from 1.0 to 0.0
     const double interp_duration = 1.0; // seconds
     const int interp_steps = 50;
+    auto sleep_ns = std::chrono::nanoseconds(static_cast<int64_t>((interp_duration / interp_steps) * 1e9));
     for (int step = 0; step <= interp_steps; ++step) {
       double t = static_cast<double>(step) / interp_steps;
       double value = (1.0 - t) * 1.0 + t * 0.0; // Linear interpolation
       unitree_hg::msg::LowCmd final_cmd;
       final_cmd.motor_cmd[JointIndex::kNotUsedJoint].q = static_cast<float>(value);
       cmd_pub_->publish(final_cmd);
-      rclcpp::sleep_for(std::chrono::duration<double>(interp_duration / interp_steps));
+      rclcpp::sleep_for(sleep_ns);
     }
   }
 };
